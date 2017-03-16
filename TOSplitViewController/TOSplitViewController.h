@@ -10,8 +10,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class TOSplitViewController;
+
+@protocol TOSplitViewControllerDelegate <NSObject>
+
+@end
+
 /**
- * A container view controller that may display up to 3 view controllers in a vertical layout.
+ * A container view controller that may display up to 3 view controller in columns along a horizontal layout.
  *
  * The three controllers are described as such:
  * Primary View Controller: The narrower view controller on the far left.
@@ -64,6 +70,16 @@ NS_ASSUME_NONNULL_BEGIN
  * (Default is 0.6)
  */
 @property (nonatomic, assign) CGFloat detailColumnMaximumWidthFraction;
+
+/**
+ * The color of the line strokes separating each view controller (Default is dark grey)
+ */
+@property (nonatomic, strong) UIColor *separatorStrokeColor UI_APPEARANCE_SELECTOR;
+
+/**
+ * If the status bar is visible, the amount of horizontal space where any line separators that would be under the time will be clipped. (Default is 55)
+ */
+@property (nonatomic, assign) CGFloat separatorStatusBarClipWidth;
 
 @end
 
