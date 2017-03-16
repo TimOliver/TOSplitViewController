@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		223D6A121E791D68000BE0D7 /* TOSplitViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 223D6A111E791D68000BE0D7 /* TOSplitViewController.m */; };
 		224719E81E791A5D000886F9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 224719E71E791A5D000886F9 /* main.m */; };
 		224719EB1E791A5D000886F9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 224719EA1E791A5D000886F9 /* AppDelegate.m */; };
 		224719EE1E791A5D000886F9 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 224719ED1E791A5D000886F9 /* ViewController.m */; };
@@ -16,6 +17,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		223D6A101E791D68000BE0D7 /* TOSplitViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TOSplitViewController.h; sourceTree = "<group>"; };
+		223D6A111E791D68000BE0D7 /* TOSplitViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TOSplitViewController.m; sourceTree = "<group>"; };
 		224719E31E791A5D000886F9 /* TOSplitViewControllerExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TOSplitViewControllerExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		224719E71E791A5D000886F9 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		224719E91E791A5D000886F9 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -39,9 +42,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		223D6A0F1E791D1C000BE0D7 /* TOSplitViewController */ = {
+			isa = PBXGroup;
+			children = (
+				223D6A101E791D68000BE0D7 /* TOSplitViewController.h */,
+				223D6A111E791D68000BE0D7 /* TOSplitViewController.m */,
+			);
+			path = TOSplitViewController;
+			sourceTree = "<group>";
+		};
 		224719DA1E791A5D000886F9 = {
 			isa = PBXGroup;
 			children = (
+				223D6A0F1E791D1C000BE0D7 /* TOSplitViewController */,
 				224719E51E791A5D000886F9 /* TOSplitViewControllerExample */,
 				224719E41E791A5D000886F9 /* Products */,
 			);
@@ -151,6 +164,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				223D6A121E791D68000BE0D7 /* TOSplitViewController.m in Sources */,
 				224719EE1E791A5D000886F9 /* ViewController.m in Sources */,
 				224719EB1E791A5D000886F9 /* AppDelegate.m in Sources */,
 				224719E81E791A5D000886F9 /* main.m in Sources */,
@@ -312,6 +326,7 @@
 				224719FC1E791A5D000886F9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
