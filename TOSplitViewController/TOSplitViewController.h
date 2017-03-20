@@ -20,13 +20,13 @@ NS_ASSUME_NONNULL_BEGIN
                                                          fromSecondaryViewController:(UIViewController *)secondaryViewController;
 
 - (nullable UIViewController *)primaryViewControllerForCollapsingSplitViewController:(TOSplitViewController *)splitViewController
-                                                         fromTertiaryViewController:(UIViewController *)secondaryViewController;
+                                                         fromDetailViewController:(UIViewController *)detailViewController;
 
 - (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
         expandSecondaryViewControllerFromPrimaryViewController:(UIViewController *)primaryViewController;
 
 - (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
-        expandTertiaryViewControllerFromPrimaryViewController:(UIViewController *)primaryViewController;
+        expandDetailViewControllerFromPrimaryViewController:(UIViewController *)primaryViewController;
 
 @end
 
@@ -93,7 +93,7 @@ NS_ASSUME_NONNULL_BEGIN
  * The minimum size the detail view controller is allowed to be before the controller considers
  * collapsing the secondary column. (Default is 430)
  */
-@property (nonatomic, assign) CGFloat tertiaryColumnMinimumWidth;
+@property (nonatomic, assign) CGFloat detailColumnMinimumWidth;
 
 /**
  * The color of the line strokes separating each view controller (Default is dark grey)

@@ -8,7 +8,12 @@
 
 #import "TOSplitViewController.h"
 
-@interface TOSplitViewController ()
+@interface TOSplitViewController () {
+    struct {
+        BOOL collapseSecondaryToPrimary;
+        BOOL collapseDetailToPrimary;
+    } _delegateFlags;
+}
 
 @end
 
@@ -46,15 +51,18 @@
 
     self.view.backgroundColor = [UIColor whiteColor];
 
-    CGSize size = self.view.bounds.size;
-    BOOL compact = (self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
-    [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
-    [self layoutViewControllersForBoundsSize:size];
+    //Add all of the view controllers
+    for (UIViewController *controller in self.viewControllers) {
+        [self addSplitViewControllerChildViewController:controller];
+    }
 }
 
 - (void)viewDidLayoutSubviews
 {
-    [self layoutViewControllersForBoundsSize:self.view.bounds.size];
+    CGSize size = self.view.bounds.size;
+    BOOL compact = (self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
+    [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
+    [self layoutViewControllersForBoundsSize:size];
 }
 
 #pragma mark - Column Setup & Management -
@@ -67,7 +75,7 @@
     [controller didMoveToParentViewController:self];
 }
 
-- (UIViewController *)removeSplitViewContorllerChildViewController:(UIViewController *)controller
+- (UIViewController *)removeSplitViewControllerChildViewController:(UIViewController *)controller
 {
     [controller willMoveToParentViewController:nil];
     [controller removeFromParentViewController];
@@ -99,112 +107,93 @@
 
     if (numberOfColumns == newNumberOfColumns) { return; }
 
+    NSMutableArray *controllers = [NSMutableArray arrayWithArray:self.viewControllers];
+
     // Collapse from three columns to two
-    if (numberOfColumns == 3 && newNumberOfColumns < 3 && [self collapseSecondaryControllerIntoPrimaryController]) {
+    if (numberOfColumns == 3 && newNumberOfColumns < 3) {
+        UIViewController *primaryViewController = controllers.firstObject;
+        UIViewController *secondaryViewController = controllers[1];
+
+        // See if the user wants to handle the collapse
+        if (_delegateFlags.collapseSecondaryToPrimary) {
+            UIViewController *newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
+                                                                            fromSecondaryViewController:secondaryViewController];
+
+            if ([self replacePrimaryControllerWithController:newPrimaryController]) {
+                [controllers replaceObjectAtIndex:0 withObject:newPrimaryController];
+            }
+        }
+        else {
+            [self mergeViewController:secondaryViewController intoViewController:primaryViewController];
+        }
+
+        [self removeSplitViewControllerChildViewController:secondaryViewController];
+        [controllers removeObjectAtIndex:1];
+
         numberOfColumns--;
     }
+
+    _viewControllers = [NSArray arrayWithArray:controllers];
 
     // Collapse from two to one
     if (numberOfColumns == 2 && newNumberOfColumns < 2) {
+        UIViewController *primaryViewController = self.viewControllers.firstObject;
+        UIViewController *detailViewController = self.viewControllers[1];
+
+        if (_delegateFlags.collapseDetailToPrimary) {
+            UIViewController *newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
+                                                                                    fromDetailViewController:detailViewController];
+            if ([self replacePrimaryControllerWithController:newPrimaryController]) {
+                [controllers replaceObjectAtIndex:0 withObject:newPrimaryController];
+            }
+        }
+        else {
+            [self mergeViewController:detailViewController intoViewController:primaryViewController];
+        }
+
+        [self removeSplitViewControllerChildViewController:detailViewController];
+        [controllers removeObjectAtIndex:1];
+
         numberOfColumns--;
     }
+
+    _viewControllers = [NSArray arrayWithArray:controllers];
 }
 
-- (BOOL)collapseSecondaryControllerIntoPrimaryController
+- (BOOL)replacePrimaryControllerWithController:(UIViewController *)viewController
 {
-    if (self.viewControllers.count <= 2) { return NO; }
+    UIViewController *primaryViewController = self.viewControllers.firstObject;
+    if (viewController == primaryViewController) { return NO; }
 
-    UIViewController *primaryViewController = self.viewControllers[0];
-    UIViewController *secondaryViewController = self.viewControllers[1];
-
-    NSMutableArray *controllers = [NSMutableArray arrayWithArray:self.viewControllers];
-
-    // Let the delegate configure the new primary controller
-    if ([self.delegate respondsToSelector:@selector(primaryViewControllerForCollapsingSplitViewController:fromSecondaryViewController:)]) {
-        UIViewController *newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self fromSecondaryViewController:secondaryViewController];
-        if (newPrimaryController != primaryViewController) {
-            [controllers removeObject:primaryViewController];
-            [self removeSplitViewContorllerChildViewController:primaryViewController];
-            [self addSplitViewControllerChildViewController:newPrimaryController];
-            [controllers insertObject:newPrimaryController atIndex:0];
-        }
-    }
-    else {
-        // Default bahaviour is to assume primary is navigation controller and push to it
-        if ([primaryViewController isKindOfClass:[UINavigationController class]]) {
-
-            UINavigationController *primaryNavigationController = (UINavigationController *)primaryViewController;
-
-            //Copy all view controllers to the primary navigation controller
-            if ([secondaryViewController isKindOfClass:[UINavigationController class]]) {
-                UINavigationController *secondaryNavigationController = (UINavigationController *)secondaryViewController;
-
-                NSArray *secondaryViewControllers = secondaryNavigationController.viewControllers;
-                NSArray *primaryViewControllers = primaryNavigationController.viewControllers;
-                secondaryNavigationController.viewControllers = [NSArray array];
-
-                primaryNavigationController.viewControllers = [primaryViewControllers arrayByAddingObjectsFromArray:secondaryViewControllers];
-            }
-            else {
-                [primaryNavigationController pushViewController:secondaryViewController animated:NO];
-            }
-        }
-    }
-
-    [self removeSplitViewContorllerChildViewController:secondaryViewController];
-    [controllers removeObject:secondaryViewController];
-
-    self.viewControllers = [NSArray arrayWithArray:controllers];
+    [self removeSplitViewControllerChildViewController:primaryViewController];
+    [self addSplitViewControllerChildViewController:viewController];
 
     return YES;
 }
 
-- (BOOL)collapseTertiaryControllerIntoPrimaryController
+- (BOOL)mergeViewController:(UIViewController *)sourceViewController intoViewController:(UIViewController *)destViewController
 {
-    if (self.viewControllers.count <= 1) { return NO; }
+    // If the dest is a navigation controller, we can push to it, else just let the source get destroyed
+    if (![destViewController isKindOfClass:[UINavigationController class]]) { return NO; }
 
-    UIViewController *primaryViewController = self.viewControllers[0];
-    UIViewController *tertiaryViewController = self.viewControllers[1];
+    UINavigationController *destNavigationController = (UINavigationController *)destViewController;
 
-    NSMutableArray *controllers = [NSMutableArray arrayWithArray:self.viewControllers];
+    //Copy all view controllers to the primary navigation controller
+    if ([sourceViewController isKindOfClass:[UINavigationController class]]) {
+        UINavigationController *sourceNavigationController = (UINavigationController *)sourceViewController;
 
-    // Let the delegate configure the new primary controller
-    if ([self.delegate respondsToSelector:@selector(primaryViewControllerForCollapsingSplitViewController:fromTertiaryViewController:)]) {
-        UIViewController *newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self fromTertiaryViewController:tertiaryViewController];
-        if (newPrimaryController != primaryViewController) {
-            [controllers removeObject:primaryViewController];
-            [self removeSplitViewContorllerChildViewController:primaryViewController];
-            [self addSplitViewControllerChildViewController:newPrimaryController];
-            [controllers insertObject:newPrimaryController atIndex:0];
+        NSArray *sourceViewControllers = sourceNavigationController.viewControllers;
+        NSArray *destViewControllers = destNavigationController.viewControllers;
+        sourceNavigationController.viewControllers = [NSArray array];
+
+        for (UIViewController *controller in sourceViewControllers) {
+            [destNavigationController pushViewController:controller animated:NO];
         }
     }
     else {
-        // Default bahaviour is to assume primary is navigation controller and push to it
-        if ([primaryViewController isKindOfClass:[UINavigationController class]]) {
-
-            UINavigationController *primaryNavigationController = (UINavigationController *)primaryViewController;
-
-            //Copy all view controllers to the primary navigation controller
-            if ([tertiaryViewController isKindOfClass:[UINavigationController class]]) {
-                UINavigationController *tertiaryNavigationController = (UINavigationController *)tertiaryViewController;
-
-                NSArray *tertiaryViewControllers = tertiaryNavigationController.viewControllers;
-                NSArray *primaryViewControllers = primaryNavigationController.viewControllers;
-                tertiaryNavigationController.viewControllers = [NSArray array];
-
-                primaryNavigationController.viewControllers = [primaryViewControllers arrayByAddingObjectsFromArray:tertiaryViewControllers];
-            }
-            else {
-                [primaryNavigationController pushViewController:tertiaryViewController animated:NO];
-            }
-        }
+        [destNavigationController pushViewController:sourceViewController animated:NO];
     }
 
-    [self removeSplitViewContorllerChildViewController:tertiaryViewController];
-    [controllers removeObject:tertiaryViewController];
-
-    self.viewControllers = [NSArray arrayWithArray:controllers];
-    
     return YES;
 }
 
@@ -240,5 +229,16 @@
     return 1;
 }
 
+#pragma mark - Accessors -
+- (void)setDelegate:(id<TOSplitViewControllerDelegate>)delegate
+{
+    if (delegate == _delegate) { return; }
+    _delegate = delegate;
+
+    _delegateFlags.collapseSecondaryToPrimary = [_delegate respondsToSelector:@selector(primaryViewControllerForCollapsingSplitViewController:
+                                                                                        fromSecondaryViewController:)];
+    _delegateFlags.collapseDetailToPrimary = [_delegate respondsToSelector:@selector(primaryViewControllerForCollapsingSplitViewController:
+                                                                                     fromDetailViewController:)];
+}
 
 @end
