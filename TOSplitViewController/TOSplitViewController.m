@@ -119,15 +119,16 @@
             UIViewController *newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
                                                                             fromSecondaryViewController:secondaryViewController];
 
+            [self removeSplitViewControllerChildViewController:secondaryViewController];
             if ([self replacePrimaryControllerWithController:newPrimaryController]) {
                 [controllers replaceObjectAtIndex:0 withObject:newPrimaryController];
             }
         }
         else {
+            [self removeSplitViewControllerChildViewController:secondaryViewController];
             [self mergeViewController:secondaryViewController intoViewController:primaryViewController];
         }
 
-        [self removeSplitViewControllerChildViewController:secondaryViewController];
         [controllers removeObjectAtIndex:1];
 
         numberOfColumns--;
@@ -143,15 +144,16 @@
         if (_delegateFlags.collapseDetailToPrimary) {
             UIViewController *newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
                                                                                     fromDetailViewController:detailViewController];
+            [self removeSplitViewControllerChildViewController:detailViewController];
             if ([self replacePrimaryControllerWithController:newPrimaryController]) {
                 [controllers replaceObjectAtIndex:0 withObject:newPrimaryController];
             }
         }
         else {
+            [self removeSplitViewControllerChildViewController:detailViewController];
             [self mergeViewController:detailViewController intoViewController:primaryViewController];
         }
 
-        [self removeSplitViewControllerChildViewController:detailViewController];
         [controllers removeObjectAtIndex:1];
 
         numberOfColumns--;
@@ -183,8 +185,7 @@
         UINavigationController *sourceNavigationController = (UINavigationController *)sourceViewController;
 
         NSArray *sourceViewControllers = sourceNavigationController.viewControllers;
-        NSArray *destViewControllers = destNavigationController.viewControllers;
-        sourceNavigationController.viewControllers = [NSArray array];
+        sourceNavigationController.viewControllers = [NSArray array]; //Remove all view controllers from old navigation controller
 
         for (UIViewController *controller in sourceViewControllers) {
             [destNavigationController pushViewController:controller animated:NO];
