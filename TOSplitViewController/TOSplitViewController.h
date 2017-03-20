@@ -14,6 +14,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol TOSplitViewControllerDelegate <NSObject>
 
+@optional
+
+- (nullable UIViewController *)primaryViewControllerForCollapsingSplitViewController:(TOSplitViewController *)splitViewController
+                                                         fromSecondaryViewController:(UIViewController *)secondaryViewController;
+
+- (nullable UIViewController *)primaryViewControllerForCollapsingSplitViewController:(TOSplitViewController *)splitViewController
+                                                         fromTertiaryViewController:(UIViewController *)secondaryViewController;
+
+- (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
+        expandSecondaryViewControllerFromPrimaryViewController:(UIViewController *)primaryViewController;
+
+- (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
+        expandTertiaryViewControllerFromPrimaryViewController:(UIViewController *)primaryViewController;
+
 @end
 
 /**
@@ -31,21 +45,31 @@ NS_ASSUME_NONNULL_BEGIN
 @interface TOSplitViewController : UIViewController
 
 /**
+ * The delegate object receiving events from this view controller
+ */
+@property (nonatomic, weak) id<TOSplitViewControllerDelegate> delegate;
+
+/**
  * The view controllers currently visible on-screen, from left-to-right
  */
 @property (nonatomic, copy) NSArray<UIViewController *> *viewControllers;
 
 /**
  * The minimum width to which the primary view controller may shrink before the controller
- * considers collapsing it into the secondary container. Default value is 320.0
+ * will collapse it into the secondary container. Default value is 280.0
  */
 @property (nonatomic, assign) CGFloat primaryColumnMinimumWidth;
 
 /**
- * Space permitting, the width fraction of the primary column that the controller could ideally extend to.
- * (Default is 0.4)
+ * The absolute maximum width to which the primary view controller may expand. Default value is 390.
  */
-@property (nonatomic, assign) CGFloat primaryColumnMaximumWidthFraction;
+@property (nonatomic, assign) CGFloat primaryColumnMaximumWidth;
+
+/**
+ * When the secondary controller is collapsed, the preferred fractional width of the primary column.
+ * Default value is 0.38
+ */
+@property (nonatomic, assign) CGFloat preferredPrimaryColumnWidthFraction;
 
 /**
  * The minimum width to which the secondary view controller may shrink before the controller
@@ -57,19 +81,19 @@ NS_ASSUME_NONNULL_BEGIN
  * Space permitting, the width fraction of the secondary column that the controller could ideally extend to.
  * (Default is 0.3)
  */
-@property (nonatomic, assign) CGFloat secondaryColumnMaximumWidthFraction;
+@property (nonatomic, assign) CGFloat secondaryColumnMaximumWidth;
 
 /**
- * The minimum width to which the detail view controller may shrink before the controller
- * considers collapsing it into a single view controller. Default value is 384.0
+ * The preferred fractional width of the secondary column.
+ * Default value is 0.38
  */
-@property (nonatomic, assign) CGFloat detailColumnMinimumWidth;
+@property (nonatomic, assign) CGFloat preferredSecondaryColumnWidthFraction;
 
 /**
- * Space permitting, the width fraction of the primary column that the controller could ideally extend to.
- * (Default is 0.6)
+ * The minimum size the detail view controller is allowed to be before the controller considers
+ * collapsing the secondary column. (Default is 430)
  */
-@property (nonatomic, assign) CGFloat detailColumnMaximumWidthFraction;
+@property (nonatomic, assign) CGFloat tertiaryColumnMinimumWidth;
 
 /**
  * The color of the line strokes separating each view controller (Default is dark grey)
@@ -80,6 +104,8 @@ NS_ASSUME_NONNULL_BEGIN
  * If the status bar is visible, the amount of horizontal space where any line separators that would be under the time will be clipped. (Default is 55)
  */
 @property (nonatomic, assign) CGFloat separatorStatusBarClipWidth;
+
+- (instancetype)initWithViewControllers:(NSArray<UIViewController *> *)viewControllers;
 
 @end
 
