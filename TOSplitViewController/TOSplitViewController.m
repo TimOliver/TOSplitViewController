@@ -100,6 +100,9 @@
     }
 }
 
+/**
+ *
+ */
 - (void)updateViewControllersForBoundsSize:(CGSize)size compactSizeClass:(BOOL)compact
 {
     NSInteger numberOfColumns    = self.viewControllers.count;
@@ -109,64 +112,60 @@
 
     NSMutableArray *controllers = [NSMutableArray arrayWithArray:self.viewControllers];
 
-    // Collapse from three columns to two
-    if (numberOfColumns == 3 && newNumberOfColumns < 3) {
+    // Collapse columns down to the necessary number
+    while (numberOfColumns > newNumberOfColumns && controllers.count > 1) {
         UIViewController *primaryViewController = controllers.firstObject;
-        UIViewController *secondaryViewController = controllers[1];
+        UIViewController *auxiliaryViewController = controllers[1]; // Either the secondary or detail controller
 
-        // See if the user wants to handle the collapse
-        if (_delegateFlags.collapseSecondaryToPrimary) {
-            UIViewController *newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
-                                                                            fromSecondaryViewController:secondaryViewController];
+        // We're collapsing the secondary controller into the primary
+        UIViewController *newPrimaryController = nil;
+        if (numberOfColumns == 3) {
+            if (_delegateFlags.collapseSecondaryToPrimary) {
+                newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
+                                                                                fromSecondaryViewController:auxiliaryViewController];
+            }
+        }
+        else if (numberOfColumns == 2) { // We're collapsing the detail controller into the primary
+            if (_delegateFlags.collapseDetailToPrimary) {
+                newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
+                                                                                fromDetailViewController:auxiliaryViewController];
+            }
+        }
 
-            [self removeSplitViewControllerChildViewController:secondaryViewController];
+        // If there was a delegate that provided a user-specified view controller, override and replace
+        // the current primary controller
+        if (newPrimaryController) {
+            [self removeSplitViewControllerChildViewController:auxiliaryViewController];
             if ([self replacePrimaryControllerWithController:newPrimaryController]) {
                 [controllers replaceObjectAtIndex:0 withObject:newPrimaryController];
             }
         }
-        else {
-            [self removeSplitViewControllerChildViewController:secondaryViewController];
-            [self mergeViewController:secondaryViewController intoViewController:primaryViewController];
+        else { // otherwise default to a merge behaviour where the auxiliary controller will add its children to the primary nav controller
+            [self removeSplitViewControllerChildViewController:auxiliaryViewController];
+            [self mergeViewController:auxiliaryViewController intoViewController:primaryViewController];
         }
 
+        // Remove the controller we just merged / replaced
         [controllers removeObjectAtIndex:1];
+        _viewControllers = [NSArray arrayWithArray:controllers];
 
         numberOfColumns--;
     }
 
-    _viewControllers = [NSArray arrayWithArray:controllers];
+    // Expand columns to the necessary number
+    while (numberOfColumns < newNumberOfColumns && controllers.count <= 3) {
 
-    // Collapse from two to one
-    if (numberOfColumns == 2 && newNumberOfColumns < 2) {
-        UIViewController *primaryViewController = self.viewControllers.firstObject;
-        UIViewController *detailViewController = self.viewControllers[1];
-
-        if (_delegateFlags.collapseDetailToPrimary) {
-            UIViewController *newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
-                                                                                    fromDetailViewController:detailViewController];
-            [self removeSplitViewControllerChildViewController:detailViewController];
-            if ([self replacePrimaryControllerWithController:newPrimaryController]) {
-                [controllers replaceObjectAtIndex:0 withObject:newPrimaryController];
-            }
-        }
-        else {
-            [self removeSplitViewControllerChildViewController:detailViewController];
-            [self mergeViewController:detailViewController intoViewController:primaryViewController];
-        }
-
-        [controllers removeObjectAtIndex:1];
-
-        numberOfColumns--;
     }
-
-    _viewControllers = [NSArray arrayWithArray:controllers];
 }
 
 - (BOOL)replacePrimaryControllerWithController:(UIViewController *)viewController
 {
     UIViewController *primaryViewController = self.viewControllers.firstObject;
+
+    // Skip if the new primary controller is actually the original (ie a navigation controller)
     if (viewController == primaryViewController) { return NO; }
 
+    // Remove the original view controller and add the new one
     [self removeSplitViewControllerChildViewController:primaryViewController];
     [self addSplitViewControllerChildViewController:viewController];
 

@@ -47,7 +47,7 @@
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentifier];
     }
 
-    cell.textLabel.text = [NSString stringWithFormat:@"Cell %d", indexPath.row];
+    cell.textLabel.text = [NSString stringWithFormat:@"Cell %ld", (long)indexPath.row];
 
     return cell;
 }
