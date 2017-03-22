@@ -16,6 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @optional
 
+- (BOOL)splitViewControllerShouldShowSecondaryColumn:(TOSplitViewController *)splitViewController;
+
 - (nullable UIViewController *)primaryViewControllerForCollapsingSplitViewController:(TOSplitViewController *)splitViewController
                                                          fromSecondaryViewController:(UIViewController *)secondaryViewController;
 

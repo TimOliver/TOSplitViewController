@@ -10,8 +10,11 @@
 
 @interface TOSplitViewController () {
     struct {
+        BOOL showSecondController;
         BOOL collapseSecondaryToPrimary;
         BOOL collapseDetailToPrimary;
+        BOOL expandPrimaryToDetail;
+        BOOL expandPrimaryToSecondary;
     } _delegateFlags;
 }
 
@@ -49,7 +52,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
 
-    self.view.backgroundColor = [UIColor whiteColor];
+    self.view.backgroundColor = [UIColor colorWithWhite:0.95f alpha:1.0f];
 
     //Add all of the view controllers
     for (UIViewController *controller in self.viewControllers) {
@@ -100,9 +103,6 @@
     }
 }
 
-/**
- *
- */
 - (void)updateViewControllersForBoundsSize:(CGSize)size compactSizeClass:(BOOL)compact
 {
     NSInteger numberOfColumns    = self.viewControllers.count;
@@ -153,8 +153,35 @@
     }
 
     // Expand columns to the necessary number
-    while (numberOfColumns < newNumberOfColumns && controllers.count <= 3) {
+    while (numberOfColumns < newNumberOfColumns && controllers.count < 3) {
+        UIViewController *sourceViewController = controllers.firstObject;
+        UIViewController *expandedViewController = nil;
 
+        // If we're expanding the primary out into a detail
+        if (numberOfColumns == 1) {
+            if (_delegateFlags.expandPrimaryToDetail) {
+                expandedViewController = [_delegate splitViewController:self expandDetailViewControllerFromPrimaryViewController:sourceViewController];
+            }
+        }
+        else if (numberOfColumns == 2) {
+            if (_delegateFlags.expandPrimaryToSecondary) {
+                expandedViewController = [_delegate splitViewController:self expandSecondaryViewControllerFromPrimaryViewController:sourceViewController];
+            }
+
+        }
+
+        // If the delegates failed, try to manually expand the controller if it's a navigation controller
+        if (expandedViewController == nil) {
+            expandedViewController = [self expandedViewControllerFromSourceViewController:sourceViewController];
+        }
+
+        if (expandedViewController) {
+            [controllers addObject:expandedViewController];
+            [self addSplitViewControllerChildViewController:expandedViewController];
+        }
+
+        numberOfColumns++;
+        _viewControllers = [NSArray arrayWithArray:controllers];
     }
 }
 
@@ -197,15 +224,26 @@
     return YES;
 }
 
+- (UIViewController *)expandedViewControllerFromSourceViewController:(UIViewController *)sourceViewController
+{
+    // If a navigation controller, extract the last view controller from it and return it in a new navigation controller
+    if ([sourceViewController isKindOfClass:[UINavigationController class]]) {
+        UINavigationController *navigationController = (UINavigationController *)sourceViewController;
+        if (navigationController.viewControllers.count < 2) {
+            return nil;
+        }
+
+        UIViewController *lastViewController = [(UINavigationController *)sourceViewController popViewControllerAnimated:NO];
+        return [[UINavigationController alloc] initWithRootViewController:lastViewController];
+    }
+
+    return nil;
+}
+
 #pragma mark - Column State Checking -
 
 - (NSInteger)possibleNumberOfColumnsForWidth:(CGFloat)width
 {
-    // Not enough view controllers to display
-    if (self.viewControllers.count < 2) {
-        return 1;
-    }
-
     // Not a regular side class (eg, iPhone / iPad Split View)
     if (self.view.traitCollection.horizontalSizeClass != UIUserInterfaceSizeClassRegular) {
         return 1;
@@ -235,10 +273,13 @@
     if (delegate == _delegate) { return; }
     _delegate = delegate;
 
+    _delegateFlags.showSecondController = [_delegate respondsToSelector:@selector(splitViewControllerShouldShowSecondaryColumn:)];
     _delegateFlags.collapseSecondaryToPrimary = [_delegate respondsToSelector:@selector(primaryViewControllerForCollapsingSplitViewController:
                                                                                         fromSecondaryViewController:)];
     _delegateFlags.collapseDetailToPrimary = [_delegate respondsToSelector:@selector(primaryViewControllerForCollapsingSplitViewController:
                                                                                      fromDetailViewController:)];
+    _delegateFlags.expandPrimaryToDetail = [_delegate respondsToSelector:@selector(splitViewController:expandDetailViewControllerFromPrimaryViewController:)];
+    _delegateFlags.expandPrimaryToSecondary = [_delegate respondsToSelector:@selector(splitViewController:expandSecondaryViewControllerFromPrimaryViewController:)];
 }
 
 @end
