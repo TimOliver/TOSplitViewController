@@ -52,9 +52,17 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak) id<TOSplitViewControllerDelegate> delegate;
 
 /**
- * The view controllers currently visible on-screen, from left-to-right
+ * The view controllers currently visible on-screen, from left-to-right. 
+ * When the number of columns decrease, the related view controllers will be released
+ * from this array.
  */
 @property (nonatomic, copy) NSArray<UIViewController *> *viewControllers;
+
+/**
+ * The maximum number of columns this controller is allowed to show.
+ * Default value is 3, and can only be decreased to 1.
+ */
+@property (nonatomic, assign) NSInteger maximumNumberOfColumns;
 
 /**
  * The minimum width to which the primary view controller may shrink before the controller
@@ -84,12 +92,6 @@ NS_ASSUME_NONNULL_BEGIN
  * (Default is 0.3)
  */
 @property (nonatomic, assign) CGFloat secondaryColumnMaximumWidth;
-
-/**
- * The preferred fractional width of the secondary column.
- * Default value is 0.38
- */
-@property (nonatomic, assign) CGFloat preferredSecondaryColumnWidthFraction;
 
 /**
  * The minimum size the detail view controller is allowed to be before the controller considers

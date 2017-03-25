@@ -18,6 +18,8 @@
     } _delegateFlags;
 }
 
+@property (nonatomic, strong) NSArray<UIView *> *separatorViews;
+
 @end
 
 @implementation TOSplitViewController
@@ -35,7 +37,7 @@
 - (void)setUp
 {
     // Primary Column
-    _primaryColumnMinimumWidth = 290.0f;
+    _primaryColumnMinimumWidth = 254.0f;
     _primaryColumnMaximumWidth = 400.0f;
     _preferredPrimaryColumnWidthFraction = 0.38f;
 
@@ -44,7 +46,12 @@
     _secondaryColumnMaximumWidth = 400.0f;
 
     // Detail Column
-    _detailColumnMinimumWidth = 414.0f;
+    _detailColumnMinimumWidth = 450.0f;
+
+    // State data
+    _maximumNumberOfColumns = 3;
+
+    _separatorStrokeColor = [UIColor colorWithWhite:0.75f alpha:1.0f];
 }
 
 #pragma mark - View Lifecylce -
@@ -58,6 +65,15 @@
     for (UIViewController *controller in self.viewControllers) {
         [self addSplitViewControllerChildViewController:controller];
     }
+
+    // Create separators
+    NSMutableArray *separators = [NSMutableArray array];
+    for (NSInteger i = 0; i < 2; i++) {
+        UIView *view = [[UIView alloc] init];
+        view.backgroundColor = self.separatorStrokeColor;
+        [separators addObject:view];
+    }
+    self.separatorViews = [NSArray arrayWithArray:separators];
 }
 
 - (void)viewDidLayoutSubviews
@@ -87,19 +103,80 @@
     return controller;
 }
 
-- (void)layoutViewControllersForBoundsSize:(CGSize)boundsSize
+- (void)layoutViewControllersForBoundsSize:(CGSize)size
 {
-    NSInteger numberOfColumns = [self possibleNumberOfColumnsForWidth:boundsSize.width];
+    NSInteger numberOfColumns = self.viewControllers.count;
+    if (numberOfColumns == 0) {
+        return;
+    }
 
     CGRect frame = CGRectZero;
-    for (UIViewController *controller in self.viewControllers) {
-        frame.size.width = self.primaryColumnMinimumWidth;
-        frame.size.height = boundsSize.height;
-        [controller.view setFrame:frame];
-        frame.origin.x += 320;
 
-        UITraitCollection *horizontal = [UITraitCollection traitCollectionWithHorizontalSizeClass:UIUserInterfaceSizeClassCompact];
-        [self setOverrideTraitCollection:horizontal forChildViewController:self.viewControllers[0]];
+    // The columns to layout
+    UIViewController *primaryController = self.viewControllers.firstObject;
+    UIViewController *secondaryController = numberOfColumns == 3 ? self.viewControllers[1] : nil;
+    UIViewController *detailController = nil;
+    if (numberOfColumns > 1) {
+        detailController = numberOfColumns == 3 ? self.viewControllers[2] : self.viewControllers[1];
+    }
+
+    if (numberOfColumns == 3) {
+        CGFloat idealPrimaryWidth = self.primaryColumnMinimumWidth;
+        CGFloat idealSecondaryWidth = self.secondaryColumnMinimumWidth;
+        CGFloat idealDetailWidth = self.detailColumnMinimumWidth;
+
+        CGFloat padding = 0.0f;
+        CGFloat delta = size.width - (idealPrimaryWidth + idealSecondaryWidth + idealDetailWidth);
+        if (delta > FLT_EPSILON) {
+            padding = floorf(delta / 3.0f);
+        }
+
+        frame.size = size;
+        frame.size.width = idealPrimaryWidth + padding;
+        primaryController.view.frame = frame;
+
+        frame.origin.x = CGRectGetMaxX(frame);
+        frame.size.width = idealSecondaryWidth + padding;
+        secondaryController.view.frame = frame;
+
+        frame.origin.x = CGRectGetMaxX(frame);
+        frame.size.width = size.width - frame.origin.x;
+        detailController.view.frame = frame;
+    }
+    else if (numberOfColumns == 2) {
+        CGFloat idealPrimaryWidth = (size.width * self.preferredPrimaryColumnWidthFraction);
+        idealPrimaryWidth = MAX(self.primaryColumnMinimumWidth, idealPrimaryWidth);
+        idealPrimaryWidth = MIN(self.primaryColumnMaximumWidth, idealPrimaryWidth);
+
+        frame.size = size;
+        frame.size.width = floorf(idealPrimaryWidth);
+        primaryController.view.frame = frame;
+
+        frame.origin.x = CGRectGetMaxX(frame);
+        frame.size.width = size.width - frame.origin.x;
+        detailController.view.frame = frame;
+    }
+    else {
+        frame.size = size;
+        primaryController.view.frame = frame;
+    }
+
+    //Add the separators
+    for (UIView *view in self.separatorViews) {
+        [view removeFromSuperview];
+    }
+
+    NSInteger i = 0;
+    CGFloat width = 1.0f / [[UIScreen mainScreen] scale];
+    for (UIViewController *controller in self.viewControllers) {
+        if (i >= self.separatorViews.count) { break; }
+
+        CGRect frame = CGRectMake(0.0f, 0.0f, width, size.height);
+        UIView *separator = self.separatorViews[i++];
+        frame.origin.x = CGRectGetMaxX(controller.view.frame);
+        separator.frame = frame;
+
+        [self.view addSubview:separator];
     }
 }
 
@@ -253,18 +330,19 @@
     CGFloat totalDualWidth = self.primaryColumnMinimumWidth;
     totalDualWidth += self.detailColumnMinimumWidth;
 
+    //Default to 1 column
+    NSInteger numberOfColumns = 1;
+
     // Check if there's enough horizontal space for all 3 columns
     if (totalDualWidth + self.secondaryColumnMinimumWidth <= viewWidth + FLT_EPSILON) {
-        return 3;
+        numberOfColumns = 3;
     }
-
-    // Check if there's enough space for 2 columns
-    if (totalDualWidth < viewWidth) {
-        return 2;
+    else if (totalDualWidth < viewWidth) { // Check if there's enough space for 2 columns
+        return numberOfColumns = 2;
     }
 
     // Default to 1 column
-    return 1;
+    return MIN(self.maximumNumberOfColumns, numberOfColumns);
 }
 
 #pragma mark - Accessors -

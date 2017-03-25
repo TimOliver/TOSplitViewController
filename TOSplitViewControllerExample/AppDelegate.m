@@ -22,12 +22,15 @@
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
 
     ListTableViewController *mainController = [[ListTableViewController alloc] init];
+    mainController.title = @"Primary";
     UINavigationController *primaryNavController = [[UINavigationController alloc] initWithRootViewController:mainController];
 
     ListTableViewController *secondaryController = [[ListTableViewController alloc] init];
+    secondaryController.title = @"Secondary";
     UINavigationController *secondaryNavController = [[UINavigationController alloc] initWithRootViewController:secondaryController];
 
     DetailViewController *detailController = [[DetailViewController alloc] init];
+    detailController.title = @"Detail";
     UINavigationController *detailNavController = [[UINavigationController alloc] initWithRootViewController:detailController];
 
     NSArray *controllers = @[primaryNavController, secondaryNavController, detailNavController];
