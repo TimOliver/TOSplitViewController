@@ -10,6 +10,8 @@
 
 @interface DetailViewController ()
 
+@property (nonatomic, strong) UILabel *label;
+
 @end
 
 @implementation DetailViewController
@@ -17,21 +19,17 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor whiteColor];
-}
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
-}
+    self.label = [[UILabel alloc] initWithFrame:CGRectZero];
+    self.label.textColor = [UIColor colorWithWhite:0.75f alpha:1.0f];
+    self.label.text = @"XD";
+    self.label.font = [UIFont systemFontOfSize:120.0f weight:UIFontWeightMedium];
+    self.label.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin
+                                    | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
+    [self.view addSubview:self.label];
 
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
+    [self.label sizeToFit];
+    self.label.center = self.view.center;
 }
-*/
 
 @end
