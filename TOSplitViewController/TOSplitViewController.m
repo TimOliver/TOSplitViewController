@@ -18,7 +18,13 @@
     } _delegateFlags;
 }
 
+// The separator lines between view controllers
 @property (nonatomic, strong) NSArray<UIView *> *separatorViews;
+
+// The three view controllers, returning nil if not presently visible
+@property (nonatomic, readonly) UIViewController *primaryViewController;
+@property (nonatomic, readonly) UIViewController *secondaryViewController;
+@property (nonatomic, readonly) UIViewController *detailViewController;
 
 @end
 
@@ -76,12 +82,114 @@
     self.separatorViews = [NSArray arrayWithArray:separators];
 }
 
-- (void)viewDidLayoutSubviews
+- (void)viewWillAppear:(BOOL)animated
 {
+    [super viewWillAppear:animated];
+
     CGSize size = self.view.bounds.size;
     BOOL compact = (self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
     [self layoutViewControllersForBoundsSize:size];
+}
+
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
+{
+    NSInteger newNumberOfColumns = [self possibleNumberOfColumnsForWidth:size.width];
+
+    // If we can't simply resize the columns, perform a 'collapse' or 'expand' animation
+    if (newNumberOfColumns != self.viewControllers.count) {
+        if (newNumberOfColumns < self.viewControllers.count) {
+            [self transitionToCollapsedViewControllerCount:newNumberOfColumns withSize:size withTransitionCoordinator:coordinator];
+        }
+        else {
+            [self transitionToExpandedViewControllerCount:newNumberOfColumns withSize:size withTransitionCoordinator:coordinator];
+        }
+
+        return;
+    }
+
+    // Animate the view controllers resizing
+    [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext>  _Nonnull context) {
+        [self layoutViewControllersForBoundsSize:size];
+    } completion:nil];
+}
+
+- (void)transitionToCollapsedViewControllerCount:(NSInteger)newCount withSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
+{
+    NSInteger viewControllerCount = self.viewControllers.count;
+    BOOL collapsingSecondary = (newCount == 2); //Collapsing 3 to 2
+    BOOL collapsingDetail = (newCount == 1);    //Collapsing 2 to 1
+
+    UIView *detailSnapshot = nil;
+    UIView *secondarySnapshot = nil;
+    UIView *primarySnapshot = nil;
+
+    UIViewController *primaryViewController = self.primaryViewController;
+    primarySnapshot = [primaryViewController.view snapshotViewAfterScreenUpdates:NO];
+    [self.view addSubview:primarySnapshot];
+
+    if (collapsingSecondary) {
+        UIViewController *secondaryViewController = self.secondaryViewController;
+        secondarySnapshot = [secondaryViewController.view snapshotViewAfterScreenUpdates:NO];
+        secondarySnapshot.frame = secondaryViewController.view.frame;
+        [self.view insertSubview:secondarySnapshot atIndex:0];
+    }
+    else if (collapsingDetail) {
+        UIViewController *detailViewController = self.detailViewController;
+        detailSnapshot = [detailViewController.view snapshotViewAfterScreenUpdates:NO];
+        detailSnapshot.frame = detailViewController.view.frame;
+        [self.view addSubview:detailSnapshot];
+    }
+
+    [self updateViewControllersForBoundsSize:size compactSizeClass:(self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact)];
+    [self layoutViewControllersForBoundsSize:size];
+
+    // Offset the new primary controller back to where the detail controller was
+    if (detailSnapshot) {
+        self.primaryViewController.view.frame = detailSnapshot.frame;
+
+        // Add a separator back in
+        UIView *separatorView = self.separatorViews.firstObject;
+        CGRect frame = separatorView.frame;
+        frame.origin.x = self.primaryViewController.view.frame.origin.x;
+        separatorView.frame = frame;
+        [self.view addSubview:separatorView];
+    }
+
+    [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        if (collapsingSecondary) {
+            primarySnapshot.frame = self.primaryViewController.view.frame;
+            primarySnapshot.alpha = 0.0f;
+        }
+        else if (collapsingDetail) {
+            // Animate the detail view crossfading to the new one
+            detailSnapshot.frame = (CGRect){CGPointZero, size};
+            detailSnapshot.alpha = 0.0f;
+
+            self.primaryViewController.view.frame = detailSnapshot.frame;
+
+            // Slide the primary view out to the side
+            CGRect frame = primarySnapshot.frame;
+            frame.origin.x = -(frame.size.width);
+            primarySnapshot.frame = frame;;
+
+            // Animate the separator with it
+            UIView *separatorView = self.separatorViews.firstObject;
+            CGRect separatorFrame = separatorView.frame;
+            separatorFrame.origin.x = -(separatorFrame.size.width);
+            separatorView.frame = separatorFrame;
+        }
+
+    } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        [detailSnapshot removeFromSuperview];
+        [secondarySnapshot removeFromSuperview];
+        [primarySnapshot removeFromSuperview];
+    }];
+}
+
+- (void)transitionToExpandedViewControllerCount:(NSInteger)newCount withSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
+{
+
 }
 
 #pragma mark - Column Setup & Management -
@@ -161,17 +269,24 @@
         primaryController.view.frame = frame;
     }
 
+    [self layoutSeparatorViewsForHeight:size.height];
+}
+
+- (void)layoutSeparatorViewsForHeight:(CGFloat)height
+{
     //Add the separators
     for (UIView *view in self.separatorViews) {
         [view removeFromSuperview];
     }
+
+    if (self.viewControllers.count < 2) { return; }
 
     NSInteger i = 0;
     CGFloat width = 1.0f / [[UIScreen mainScreen] scale];
     for (UIViewController *controller in self.viewControllers) {
         if (i >= self.separatorViews.count) { break; }
 
-        CGRect frame = CGRectMake(0.0f, 0.0f, width, size.height);
+        CGRect frame = CGRectMake(0.0f, 0.0f, width, height);
         UIView *separator = self.separatorViews[i++];
         frame.origin.x = CGRectGetMaxX(controller.view.frame);
         separator.frame = frame;
@@ -253,7 +368,7 @@
         }
 
         if (expandedViewController) {
-            [controllers addObject:expandedViewController];
+            [controllers insertObject:expandedViewController atIndex:1];
             [self addSplitViewControllerChildViewController:expandedViewController];
         }
 
@@ -326,7 +441,6 @@
         return 1;
     }
 
-    CGFloat viewWidth = self.view.bounds.size.width;
     CGFloat totalDualWidth = self.primaryColumnMinimumWidth;
     totalDualWidth += self.detailColumnMinimumWidth;
 
@@ -334,10 +448,10 @@
     NSInteger numberOfColumns = 1;
 
     // Check if there's enough horizontal space for all 3 columns
-    if (totalDualWidth + self.secondaryColumnMinimumWidth <= viewWidth + FLT_EPSILON) {
+    if (totalDualWidth + self.secondaryColumnMinimumWidth <= width + FLT_EPSILON) {
         numberOfColumns = 3;
     }
-    else if (totalDualWidth < viewWidth) { // Check if there's enough space for 2 columns
+    else if (totalDualWidth < width) { // Check if there's enough space for 2 columns
         return numberOfColumns = 2;
     }
 
@@ -358,6 +472,30 @@
                                                                                      fromDetailViewController:)];
     _delegateFlags.expandPrimaryToDetail = [_delegate respondsToSelector:@selector(splitViewController:expandDetailViewControllerFromPrimaryViewController:)];
     _delegateFlags.expandPrimaryToSecondary = [_delegate respondsToSelector:@selector(splitViewController:expandSecondaryViewControllerFromPrimaryViewController:)];
+}
+
+#pragma mark - Internal Accessors -
+- (UIViewController *)primaryViewController
+{
+    return self.viewControllers.firstObject;
+}
+
+- (UIViewController *)secondaryViewController
+{
+    if (self.viewControllers.count <= 2) { return nil; }
+    return self.viewControllers[1];
+}
+
+- (UIViewController *)detailViewController
+{
+    if (self.viewControllers.count == 3) {
+        return self.viewControllers[2];
+    }
+    else if (self.viewControllers.count == 2) {
+        return self.viewControllers[1];
+    }
+
+    return nil;
 }
 
 @end
