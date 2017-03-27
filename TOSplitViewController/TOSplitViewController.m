@@ -64,8 +64,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-
-    self.view.backgroundColor = [UIColor blackColor];
+    self.view.backgroundColor = [UIColor redColor];
 
     //Add all of the view controllers
     for (UIViewController *controller in self.viewControllers) {
@@ -90,10 +89,13 @@
     BOOL compact = (self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
     [self layoutViewControllersForBoundsSize:size];
+    //[self layoutSeparatorViewsForHeight:size.height];
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
 {
+    //[super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+
     NSInteger newNumberOfColumns = [self possibleNumberOfColumnsForWidth:size.width];
 
     // If we can't simply resize the columns, perform a 'collapse' or 'expand' animation
@@ -153,67 +155,67 @@
     BOOL compact = (self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
 
-    UIViewController *newPrimary = self.primaryViewController;
+    // In certain cases, the direction the screen rotates is important for snapshot views sliding out
+    UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
+    BOOL counterClockwiseRotation = (orientation == UIInterfaceOrientationLandscapeLeft);
 
-    // Since the merge operation will move the controller, set it back to its original place before the animation
-    if (collapsingSecondary) {
-        newPrimary.view.frame = secondaryFrame;
-    }
-    else if (collapsingDetail) {
-        newPrimary.view.frame = detailFrame;
-    }
-
-    // Offset the new primary controller back to where the detail controller was
-//    if (detailSnapshot) {
-//        self.primaryViewController.view.frame = detailSnapshot.frame;
-//
-//        // Add a separator back in
-//        UIView *separatorView = self.separatorViews.firstObject;
-//        CGRect frame = separatorView.frame;
-//        frame.origin.x = self.primaryViewController.view.frame.origin.x;
-//        separatorView.frame = frame;
-//        [self.view addSubview:separatorView];
-//    }
-    [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+    id transitionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
         [self layoutViewControllersForBoundsSize:size];
 
-        if (collapsingSecondary) {
-            primarySnapshot.frame = self.primaryViewController.view.frame;
-            primarySnapshot.alpha = 0.0f;
+        // Slide the primary view out to the side
+        CGRect frame = primarySnapshot.frame;
+        frame.origin.x = -(frame.size.width);
+        frame.origin.y = counterClockwiseRotation ? size.height - frame.size.height : 0.0f;
+        primarySnapshot.frame = frame;
 
-            CGRect frame = secondarySnapshot.frame;
-            frame.size.height = size.height;
-            secondarySnapshot.frame = frame;
+        // Cross fade the secondary snapshot over the new primary
+        if (collapsingSecondary) {
+            // Kill the implicit animation applied to this and reapply our own
+            UIViewController *primaryViewController = self.primaryViewController;
+            frame = primaryViewController.view.frame;
+            [primaryViewController.view.layer removeAllAnimations];
+            primaryViewController.view.frame = secondaryFrame;
+            [UIView animateWithDuration:context.transitionDuration delay:0.0f options:UIViewAnimationOptionCurveEaseInOut animations:^{
+                primaryViewController.view.frame = frame;
+            } completion:nil];
+
+            secondarySnapshot.frame = self.primaryViewController.view.frame;
+            secondarySnapshot.alpha = 0.0f;
         }
         else if (collapsingDetail) {
+            // Make the new controller fill the whole region
+            frame = CGRectZero;
+            frame.size = size;
+            self.primaryViewController.view.frame = frame;
+
             // Animate the detail view crossfading to the new one
-            detailSnapshot.frame = (CGRect){CGPointZero, size};
+            detailSnapshot.frame = frame;
             detailSnapshot.alpha = 0.0f;
-
-            self.primaryViewController.view.frame = detailSnapshot.frame;
-
-            // Slide the primary view out to the side
-            CGRect frame = primarySnapshot.frame;
-            frame.origin.x = -(frame.size.width);
-            primarySnapshot.frame = frame;
-
-            // Animate the separator with it
-            UIView *separatorView = self.separatorViews.firstObject;
-            CGRect separatorFrame = separatorView.frame;
-            separatorFrame.origin.x = -(separatorFrame.size.width);
-            separatorView.frame = separatorFrame;
         }
+    };
 
-    } completion:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+    id completionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
         [detailSnapshot removeFromSuperview];
         [secondarySnapshot removeFromSuperview];
         [primarySnapshot removeFromSuperview];
-    }];
+    };
+
+    [coordinator animateAlongsideTransition:transitionBlock completion:completionBlock];
 }
 
 - (void)transitionToExpandedViewControllerCount:(NSInteger)newCount withSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
 {
+    BOOL compact = (self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
+    [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
 
+    id transitionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        [self layoutViewControllersForBoundsSize:size];
+    };
+
+    id completionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
+
+    };
+    [coordinator animateAlongsideTransition:transitionBlock completion:completionBlock];
 }
 
 #pragma mark - Column Setup & Management -
@@ -245,12 +247,9 @@
     CGRect frame = CGRectZero;
 
     // The columns to layout
-    UIViewController *primaryController = self.viewControllers.firstObject;
-    UIViewController *secondaryController = numberOfColumns == 3 ? self.viewControllers[1] : nil;
-    UIViewController *detailController = nil;
-    if (numberOfColumns > 1) {
-        detailController = numberOfColumns == 3 ? self.viewControllers[2] : self.viewControllers[1];
-    }
+    UIViewController *primaryController = self.primaryViewController;
+    UIViewController *secondaryController = self.secondaryViewController;
+    UIViewController *detailController = self.detailViewController;
 
     if (numberOfColumns == 3) {
         CGFloat idealPrimaryWidth = self.primaryColumnMinimumWidth;
@@ -292,8 +291,6 @@
         frame.size = size;
         primaryController.view.frame = frame;
     }
-
-    [self layoutSeparatorViewsForHeight:size.height];
 }
 
 - (void)layoutSeparatorViewsForHeight:(CGFloat)height
@@ -330,7 +327,7 @@
 
     // Collapse columns down to the necessary number
     while (numberOfColumns > newNumberOfColumns && controllers.count > 1) {
-        UIViewController *primaryViewController = controllers.firstObject;
+        UIViewController *primaryViewController = self.primaryViewController;
         UIViewController *auxiliaryViewController = controllers[1]; // Either the secondary or detail controller
 
         // We're collapsing the secondary controller into the primary
