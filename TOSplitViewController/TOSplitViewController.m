@@ -64,7 +64,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor redColor];
+    self.view.backgroundColor = [UIColor whiteColor];
 
     //Add all of the view controllers
     for (UIViewController *controller in self.viewControllers) {
@@ -155,13 +155,24 @@
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
     [self layoutViewControllersForBoundsSize:size];
 
+    // Save the newly calculated frames so we can apply them in an animation
+    CGRect newPrimaryFrame = self.primaryViewController.view.frame;
+    CGRect newDetailFrame = self.detailViewController.view.frame;
+
+    // Restore the controllers back to their previous state so we can animate them
+    if (collapsingSecondary) {
+        self.primaryViewController.view.frame = secondaryFrame;
+        self.detailViewController.view.frame = detailFrame;
+    }
+    else if (collapsingDetail) {
+        self.primaryViewController.view.frame = detailFrame;
+    }
+
     // In certain cases, the direction the screen rotates is important for snapshot views sliding out
     UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
     BOOL counterClockwiseRotation = (orientation == UIInterfaceOrientationLandscapeLeft);
 
     id transitionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
-
-
         // Slide the primary view out to the side
         CGRect frame = primarySnapshot.frame;
         frame.origin.x = -(frame.size.width);
@@ -170,44 +181,38 @@
 
         // Capture the two and from states needed for the new primary controller
         UIViewController *primaryViewController = self.primaryViewController;
-
-        CGRect fromFrame = CGRectZero;
-        CGRect toFrame = CGRectZero;
+        UIViewController *detailViewController = self.detailViewController;
 
         // Cross fade the secondary snapshot over the new primary
         if (collapsingSecondary) {
-            secondarySnapshot.frame = self.primaryViewController.view.frame;
+            // animate the snapshot
+            secondarySnapshot.frame = newPrimaryFrame;
             secondarySnapshot.alpha = 0.0f;
 
-            fromFrame = secondaryFrame;
-            toFrame = secondarySnapshot.frame;
+            // animate the detail view controller
+            detailViewController.view.frame = newDetailFrame;
+
+            // This is a huge hack, but for some reason, an implicit animation is being
+            // added to the primary view controller that overrides what we're doing here.
+            // To undo it, we kill every animation already applied to the view controller,
+            // and reapply from scratch
+            [primaryViewController.view.layer removeAllAnimations];
+
+            primaryViewController.view.frame = secondaryFrame;
+            [UIView animateWithDuration:context.transitionDuration
+                                  delay:0.0f
+                                options:UIViewAnimationOptionCurveEaseInOut
+                             animations:^{ primaryViewController.view.frame = newPrimaryFrame; }
+                             completion:nil];
         }
         else if (collapsingDetail) {
-            fromFrame = detailFrame;
-            toFrame = (CGRect){CGPointZero, size};
+            CGRect toFrame = (CGRect){CGPointZero, size};
+            primaryViewController.view.frame = toFrame;
 
             // Animate the detail view crossfading to the new one
             detailSnapshot.frame = toFrame;
             detailSnapshot.alpha = 0.0f;
-
-            //primaryViewController.view.frame = toFrame;
         }
-
-        // This is a huge hack, but for some reason, an implicit animation is being
-        // added to the primary view controller that overrides what we're doing here.
-        // To undo it, we kill every animation already applied to the view controller,
-        // and reapply from scratch
-        //[primaryViewController.view.layer removeAllAnimations];
-//        primaryViewController.view.frame = fromFrame;
-//        id animationBlock = ^{
-//            primaryViewController.view.frame = toFrame;
-//        };
-
-//        [UIView animateWithDuration:context.transitionDuration
-//                              delay:0.0f
-//                            options:UIViewAnimationOptionCurveEaseInOut
-//                         animations:animationBlock
-//                         completion:nil];
     };
 
     id completionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
