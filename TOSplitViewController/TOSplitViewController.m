@@ -129,7 +129,6 @@
     // The 'before' state of each view controller
     CGRect detailFrame = self.detailViewController.view.frame;
     CGRect secondaryFrame = self.secondaryViewController.view.frame;
-    CGRect primaryFrame = self.primaryViewController.view.frame;
 
     // Generate a snapshot view of the primary view controller
     UIViewController *primaryViewController = self.primaryViewController;
@@ -154,13 +153,14 @@
     // not perform the layout yet
     BOOL compact = (self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
+    [self layoutViewControllersForBoundsSize:size];
 
     // In certain cases, the direction the screen rotates is important for snapshot views sliding out
     UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
     BOOL counterClockwiseRotation = (orientation == UIInterfaceOrientationLandscapeLeft);
 
     id transitionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
-        [self layoutViewControllersForBoundsSize:size];
+
 
         // Slide the primary view out to the side
         CGRect frame = primarySnapshot.frame;
@@ -168,30 +168,46 @@
         frame.origin.y = counterClockwiseRotation ? size.height - frame.size.height : 0.0f;
         primarySnapshot.frame = frame;
 
+        // Capture the two and from states needed for the new primary controller
+        UIViewController *primaryViewController = self.primaryViewController;
+
+        CGRect fromFrame = CGRectZero;
+        CGRect toFrame = CGRectZero;
+
         // Cross fade the secondary snapshot over the new primary
         if (collapsingSecondary) {
-            // Kill the implicit animation applied to this and reapply our own
-            UIViewController *primaryViewController = self.primaryViewController;
-            frame = primaryViewController.view.frame;
-            [primaryViewController.view.layer removeAllAnimations];
-            primaryViewController.view.frame = secondaryFrame;
-            [UIView animateWithDuration:context.transitionDuration delay:0.0f options:UIViewAnimationOptionCurveEaseInOut animations:^{
-                primaryViewController.view.frame = frame;
-            } completion:nil];
-
             secondarySnapshot.frame = self.primaryViewController.view.frame;
             secondarySnapshot.alpha = 0.0f;
+
+            fromFrame = secondaryFrame;
+            toFrame = secondarySnapshot.frame;
         }
         else if (collapsingDetail) {
-            // Make the new controller fill the whole region
-            frame = CGRectZero;
-            frame.size = size;
-            self.primaryViewController.view.frame = frame;
+            fromFrame = detailFrame;
+            toFrame = (CGRect){CGPointZero, size};
 
             // Animate the detail view crossfading to the new one
-            detailSnapshot.frame = frame;
+            detailSnapshot.frame = toFrame;
             detailSnapshot.alpha = 0.0f;
+
+            //primaryViewController.view.frame = toFrame;
         }
+
+        // This is a huge hack, but for some reason, an implicit animation is being
+        // added to the primary view controller that overrides what we're doing here.
+        // To undo it, we kill every animation already applied to the view controller,
+        // and reapply from scratch
+        //[primaryViewController.view.layer removeAllAnimations];
+//        primaryViewController.view.frame = fromFrame;
+//        id animationBlock = ^{
+//            primaryViewController.view.frame = toFrame;
+//        };
+
+//        [UIView animateWithDuration:context.transitionDuration
+//                              delay:0.0f
+//                            options:UIViewAnimationOptionCurveEaseInOut
+//                         animations:animationBlock
+//                         completion:nil];
     };
 
     id completionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
