@@ -67,7 +67,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor redColor];
+    self.view.backgroundColor = [UIColor whiteColor];
 
     self.horizontalSizeClass = self.view.traitCollection.horizontalSizeClass;
 
@@ -317,8 +317,8 @@
         // To ensure the primary key stays on screen longer, slide it downwards when the rotation
         // animation is happening clockwise.
         UIInterfaceOrientation afterOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-        BOOL clockwiseRotation = (beforeOrientation == UIInterfaceOrientationLandscapeLeft && afterOrientation == UIInterfaceOrientationPortrait) ||
-        (beforeOrientation == UIInterfaceOrientationLandscapeRight && afterOrientation == UIInterfaceOrientationPortraitUpsideDown);
+        BOOL clockwiseRotation = (beforeOrientation == UIInterfaceOrientationPortrait && afterOrientation == UIInterfaceOrientationLandscapeRight) ||
+        (beforeOrientation == UIInterfaceOrientationPortraitUpsideDown && afterOrientation == UIInterfaceOrientationLandscapeLeft);
 
         frame.origin.y = clockwiseRotation ? size.height - newPrimaryFrame.size.height : 0.0f;
 
@@ -342,12 +342,6 @@
 
         newPrimary.view.frame = frame;
         newSecondary.view.frame = primaryFrame;
-
-        [UIView performWithoutAnimation:^{
-            [newPrimary.view setNeedsLayout];
-            [newPrimary.view layoutSubviews];
-            [newPrimary viewDidLayoutSubviews];
-        }];
 
         [UIView animateWithDuration:context.transitionDuration
                               delay:0.0f
