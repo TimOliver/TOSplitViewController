@@ -349,6 +349,10 @@
                          animations:^{
                              newPrimary.view.frame = newPrimaryFrame;
                              newSecondary.view.frame = newSecondaryFrame;
+
+                             for (UIView *view in newPrimary.view.subviews) {
+                                 [view.layer removeAllAnimations];
+                             }
                          }
                          completion:nil];
 
