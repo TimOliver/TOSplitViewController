@@ -67,7 +67,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor blackColor];
+    self.view.backgroundColor = [UIColor redColor];
 
     self.horizontalSizeClass = self.view.traitCollection.horizontalSizeClass;
 
@@ -183,6 +183,7 @@
     }
     else if (collapsingDetail) {
         self.primaryViewController.view.frame = detailFrame;
+        [self.view bringSubviewToFront:detailSnapshot];
     }
 
     // Capture the current screen orientation
@@ -272,18 +273,18 @@
     CGRect primaryFrame = primaryController.view.frame;
     CGRect detailFrame = detailController.view.frame;
 
-    UIView *snapshotView = [primaryController.view snapshotViewAfterScreenUpdates:NO];
-    if (expandingPrimary) {
-        detailSnapshot = snapshotView;
+    if (expandingSecondary) {
+        primarySnapshot = [primaryController.view snapshotViewAfterScreenUpdates:NO];
+        [self.view addSubview:primarySnapshot];
     }
-    else if (expandingSecondary) {
-        primarySnapshot = snapshotView;
-    }
-    [self.view addSubview:snapshotView];
+
+    detailSnapshot = [detailController.view snapshotViewAfterScreenUpdates:NO];
+    [self.view addSubview:detailSnapshot];
 
     BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
     [self layoutViewControllersForBoundsSize:size];
+    [self layoutSeparatorViewsForViewControllers];
 
     UIViewController *newPrimary = self.primaryViewController;
     UIViewController *newSecondary = self.secondaryViewController;
@@ -301,18 +302,37 @@
     }
     else if (expandingPrimary) {
         newDetail.view.frame = primaryFrame;
+        detailSnapshot.frame = primaryFrame;
         [self.view bringSubviewToFront:detailSnapshot];
     }
 
+    __block CGRect frame = newPrimaryFrame;
+    frame.origin.x = -CGRectGetWidth(frame);
+    newPrimary.view.frame = frame;
+
+    UIInterfaceOrientation beforeOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+
     id transitionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
-        newPrimary.view.frame = newPrimaryFrame;
+
+        // To ensure the primary key stays on screen longer, slide it downwards when the rotation
+        // animation is happening clockwise.
+        UIInterfaceOrientation afterOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+        BOOL clockwiseRotation = (beforeOrientation == UIInterfaceOrientationLandscapeLeft && afterOrientation == UIInterfaceOrientationPortrait) ||
+        (beforeOrientation == UIInterfaceOrientationLandscapeRight && afterOrientation == UIInterfaceOrientationPortraitUpsideDown);
+
+        frame.origin.y = clockwiseRotation ? size.height - newPrimaryFrame.size.height : 0.0f;
+
         newDetail.view.frame = newDetailFrame;
+        detailSnapshot.frame = newDetailFrame;
 
         detailSnapshot.alpha = 0.0f;
-        primarySnapshot.alpha = 0.0f;
 
         if (expandingSecondary) {
             primarySnapshot.frame = newSecondaryFrame;
+            primarySnapshot.alpha = 0.0f;
+        }
+        else {
+            primarySnapshot.frame = newPrimaryFrame;
         }
 
         // Perform the silly Core Animation hack on both the primary
@@ -320,13 +340,14 @@
         [newPrimary.view.layer removeAllAnimations];
         [newSecondary.view.layer removeAllAnimations];
 
+        newPrimary.view.frame = frame;
         newSecondary.view.frame = primaryFrame;
 
-        // Set the real primary off to the side so it can slide into view
-        CGRect frame = newPrimaryFrame;
-        frame.origin.x = -CGRectGetWidth(frame);
-        frame.size.height = primaryFrame.size.height;
-        newPrimary.view.frame = frame;
+        [UIView performWithoutAnimation:^{
+            [newPrimary.view setNeedsLayout];
+            [newPrimary.view layoutSubviews];
+            [newPrimary viewDidLayoutSubviews];
+        }];
 
         [UIView animateWithDuration:context.transitionDuration
                               delay:0.0f
@@ -342,6 +363,8 @@
 
     id completionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
         [self removeSeparatorViewsForViewControllers];
+        [primarySnapshot removeFromSuperview];
+        [detailSnapshot removeFromSuperview];
     };
     [coordinator animateAlongsideTransition:transitionBlock completion:completionBlock];
 }
@@ -436,7 +459,6 @@
     NSInteger i = 0;
     CGFloat width = 1.0f / [[UIScreen mainScreen] scale];
     for (UIView *view in views) {
-        if (view.superview) { [self.view bringSubviewToFront:view]; }
         if (i >= views.count - 1 || i >= self.separatorViews.count) {
             break;
         }
@@ -447,7 +469,9 @@
         frame.origin.x = CGRectGetMaxX(view.frame) - width;
         separator.frame = frame;
 
-        [self.view addSubview:separator];
+        if (separator.superview == nil) {
+            [self.view addSubview:separator];
+        }
     }
 }
 
