@@ -26,6 +26,9 @@
 @property (nonatomic, readonly) UIViewController *secondaryViewController;
 @property (nonatomic, readonly) UIViewController *detailViewController;
 
+// Manually track the horizontal size class that we will use to determine layouts
+@property (nonatomic, assign) UIUserInterfaceSizeClass horizontalSizeClass;
+
 @end
 
 @implementation TOSplitViewController
@@ -43,16 +46,16 @@
 - (void)setUp
 {
     // Primary Column
-    _primaryColumnMinimumWidth = 254.0f;
+    _primaryColumnMinimumWidth = 274.0f;
     _primaryColumnMaximumWidth = 400.0f;
     _preferredPrimaryColumnWidthFraction = 0.38f;
 
     // Secondary Column
-    _secondaryColumnMinimumWidth = 320.0f;
+    _secondaryColumnMinimumWidth = 290.0f;
     _secondaryColumnMaximumWidth = 400.0f;
 
     // Detail Column
-    _detailColumnMinimumWidth = 450.0f;
+    _detailColumnMinimumWidth = 440.0f;
 
     // State data
     _maximumNumberOfColumns = 3;
@@ -64,7 +67,9 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.view.backgroundColor = [UIColor whiteColor];
+    self.view.backgroundColor = [UIColor blackColor];
+
+    self.horizontalSizeClass = self.view.traitCollection.horizontalSizeClass;
 
     //Add all of the view controllers
     for (UIViewController *controller in self.viewControllers) {
@@ -86,15 +91,27 @@
     [super viewWillAppear:animated];
 
     CGSize size = self.view.bounds.size;
-    BOOL compact = (self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
+    BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
     [self layoutViewControllersForBoundsSize:size];
-    //[self layoutSeparatorViewsForHeight:size.height];
+    [self layoutSeparatorViewsForViewControllers];
+}
+
+- (void)willTransitionToTraitCollection:(UITraitCollection *)newCollection withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
+{
+    [super willTransitionToTraitCollection:newCollection withTransitionCoordinator:coordinator];
+    self.horizontalSizeClass = newCollection.horizontalSizeClass;
+}
+
+- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection
+{
+    [super traitCollectionDidChange:previousTraitCollection];
+    self.horizontalSizeClass = self.view.traitCollection.horizontalSizeClass;
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
 {
-    //[super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
 
     NSInteger newNumberOfColumns = [self possibleNumberOfColumnsForWidth:size.width];
 
@@ -151,7 +168,7 @@
 
     // Perform the collapse of all of the controllers. This will remove a view controller, but
     // not perform the layout yet
-    BOOL compact = (self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
+    BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
     [self layoutViewControllersForBoundsSize:size];
 
@@ -168,20 +185,29 @@
         self.primaryViewController.view.frame = detailFrame;
     }
 
-    // In certain cases, the direction the screen rotates is important for snapshot views sliding out
-    UIInterfaceOrientation orientation = [[UIApplication sharedApplication] statusBarOrientation];
-    BOOL counterClockwiseRotation = (orientation == UIInterfaceOrientationLandscapeLeft);
+    // Capture the current screen orientation
+    UIInterfaceOrientation beforeOrientation = [[UIApplication sharedApplication] statusBarOrientation];
 
     id transitionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
+
+        // To ensure the primary key stays on screen longer, slide it downwards when the rotation
+        // animation is happening clockwise.
+        UIInterfaceOrientation afterOrientation = [[UIApplication sharedApplication] statusBarOrientation];
+        BOOL clockwiseRotation = (beforeOrientation == UIInterfaceOrientationLandscapeLeft && afterOrientation == UIInterfaceOrientationPortrait) ||
+                                    (beforeOrientation == UIInterfaceOrientationLandscapeRight && afterOrientation == UIInterfaceOrientationPortraitUpsideDown);
+
         // Slide the primary view out to the side
         CGRect frame = primarySnapshot.frame;
         frame.origin.x = -(frame.size.width);
-        frame.origin.y = counterClockwiseRotation ? size.height - frame.size.height : 0.0f;
+        frame.origin.y = clockwiseRotation ? size.height - frame.size.height : 0.0f;
         primarySnapshot.frame = frame;
 
         // Capture the two and from states needed for the new primary controller
         UIViewController *primaryViewController = self.primaryViewController;
         UIViewController *detailViewController = self.detailViewController;
+
+        // Capture the views in which the separators should track
+        NSArray *views = nil;
 
         // Cross fade the secondary snapshot over the new primary
         if (collapsingSecondary) {
@@ -204,6 +230,8 @@
                                 options:UIViewAnimationOptionCurveEaseInOut
                              animations:^{ primaryViewController.view.frame = newPrimaryFrame; }
                              completion:nil];
+
+            views = @[primarySnapshot, secondarySnapshot, detailViewController.view];
         }
         else if (collapsingDetail) {
             CGRect toFrame = (CGRect){CGPointZero, size};
@@ -212,13 +240,19 @@
             // Animate the detail view crossfading to the new one
             detailSnapshot.frame = toFrame;
             detailSnapshot.alpha = 0.0f;
+
+            views = @[primarySnapshot, primaryViewController.view];
         }
+
+        [self layoutSeparatorViewsForViews:views];
     };
 
     id completionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
         [detailSnapshot removeFromSuperview];
         [secondarySnapshot removeFromSuperview];
         [primarySnapshot removeFromSuperview];
+
+        [self removeSeparatorViewsForViewControllers];
     };
 
     [coordinator animateAlongsideTransition:transitionBlock completion:completionBlock];
@@ -226,15 +260,88 @@
 
 - (void)transitionToExpandedViewControllerCount:(NSInteger)newCount withSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
 {
-    BOOL compact = (self.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
+    BOOL expandingSecondary = (newCount == 3); //Expanding 2 to 3
+    BOOL expandingPrimary = (newCount == 2);   //Expanding 1 to 2
+
+    UIView *primarySnapshot = nil;
+    UIView *detailSnapshot = nil; // Only needed if size class is changing
+
+    UIViewController *primaryController = self.primaryViewController;
+    UIViewController *detailController = self.detailViewController;
+
+    CGRect primaryFrame = primaryController.view.frame;
+    CGRect detailFrame = detailController.view.frame;
+
+    UIView *snapshotView = [primaryController.view snapshotViewAfterScreenUpdates:NO];
+    if (expandingPrimary) {
+        detailSnapshot = snapshotView;
+    }
+    else if (expandingSecondary) {
+        primarySnapshot = snapshotView;
+    }
+    [self.view addSubview:snapshotView];
+
+    BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
+    [self layoutViewControllersForBoundsSize:size];
+
+    UIViewController *newPrimary = self.primaryViewController;
+    UIViewController *newSecondary = self.secondaryViewController;
+    UIViewController *newDetail = self.detailViewController;
+
+    // Capture the final frames of each controller
+    CGRect newPrimaryFrame = newPrimary.view.frame;
+    CGRect newSecondaryFrame = newSecondary.view.frame;
+    CGRect newDetailFrame = newDetail.view.frame;
+
+    // Set them back to where they should be, pre-animation
+    if (expandingSecondary) {
+        [self.view bringSubviewToFront:primarySnapshot];
+        newDetail.view.frame = detailFrame;
+    }
+    else if (expandingPrimary) {
+        newDetail.view.frame = primaryFrame;
+        [self.view bringSubviewToFront:detailSnapshot];
+    }
 
     id transitionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
-        [self layoutViewControllersForBoundsSize:size];
+        newPrimary.view.frame = newPrimaryFrame;
+        newDetail.view.frame = newDetailFrame;
+
+        detailSnapshot.alpha = 0.0f;
+        primarySnapshot.alpha = 0.0f;
+
+        if (expandingSecondary) {
+            primarySnapshot.frame = newSecondaryFrame;
+        }
+
+        // Perform the silly Core Animation hack on both the primary
+        // and secondary controllers
+        [newPrimary.view.layer removeAllAnimations];
+        [newSecondary.view.layer removeAllAnimations];
+
+        newSecondary.view.frame = primaryFrame;
+
+        // Set the real primary off to the side so it can slide into view
+        CGRect frame = newPrimaryFrame;
+        frame.origin.x = -CGRectGetWidth(frame);
+        frame.size.height = primaryFrame.size.height;
+        newPrimary.view.frame = frame;
+
+        [UIView animateWithDuration:context.transitionDuration
+                              delay:0.0f
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:^{
+                             newPrimary.view.frame = newPrimaryFrame;
+                             newSecondary.view.frame = newSecondaryFrame;
+                         }
+                         completion:nil];
+
+        [self layoutSeparatorViewsForViewControllers];
     };
 
     id completionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
-
+        [self removeSeparatorViewsForViewControllers];
     };
     [coordinator animateAlongsideTransition:transitionBlock completion:completionBlock];
 }
@@ -314,26 +421,54 @@
     }
 }
 
-- (void)layoutSeparatorViewsForHeight:(CGFloat)height
+- (void)layoutSeparatorViewsForViewControllers
 {
-    //Add the separators
-    for (UIView *view in self.separatorViews) {
-        [view removeFromSuperview];
+    NSMutableArray *views = [NSMutableArray array];
+    for (UIViewController *controller in self.viewControllers) {
+        [views addObject:controller.view];
     }
 
-    if (self.viewControllers.count < 2) { return; }
+    [self layoutSeparatorViewsForViews:views];
+}
 
+- (void)layoutSeparatorViewsForViews:(NSArray<UIView *> *)views
+{
     NSInteger i = 0;
     CGFloat width = 1.0f / [[UIScreen mainScreen] scale];
-    for (UIViewController *controller in self.viewControllers) {
-        if (i >= self.separatorViews.count) { break; }
+    for (UIView *view in views) {
+        if (view.superview) { [self.view bringSubviewToFront:view]; }
+        if (i >= views.count - 1 || i >= self.separatorViews.count) {
+            break;
+        }
 
+        CGFloat height = view.frame.size.height;
         CGRect frame = CGRectMake(0.0f, 0.0f, width, height);
         UIView *separator = self.separatorViews[i++];
-        frame.origin.x = CGRectGetMaxX(controller.view.frame);
+        frame.origin.x = CGRectGetMaxX(view.frame) - width;
         separator.frame = frame;
 
         [self.view addSubview:separator];
+    }
+}
+
+- (void)removeSeparatorViewsForViewControllers
+{
+    NSInteger numberOfVisibleSeparators = 0;
+    for (UIView *separatorView in self.separatorViews) {
+        if (separatorView.superview) { numberOfVisibleSeparators++; }
+    }
+
+    // The number of visible separators should always be (viewControllers.count - 1)
+    if (numberOfVisibleSeparators < self.viewControllers.count) {
+        return;
+    }
+
+    NSInteger i = 0;
+    while (numberOfVisibleSeparators >= self.viewControllers.count) {
+        if (i >= self.separatorViews.count) { break; }
+        UIView *separatorView = self.separatorViews[i++];
+        [separatorView removeFromSuperview];
+        numberOfVisibleSeparators--;
     }
 }
 
@@ -479,7 +614,7 @@
 - (NSInteger)possibleNumberOfColumnsForWidth:(CGFloat)width
 {
     // Not a regular side class (eg, iPhone / iPad Split View)
-    if (self.view.traitCollection.horizontalSizeClass != UIUserInterfaceSizeClassRegular) {
+    if (self.horizontalSizeClass != UIUserInterfaceSizeClassRegular) {
         return 1;
     }
 
@@ -493,8 +628,8 @@
     if (totalDualWidth + self.secondaryColumnMinimumWidth <= width + FLT_EPSILON) {
         numberOfColumns = 3;
     }
-    else if (totalDualWidth < width) { // Check if there's enough space for 2 columns
-        return numberOfColumns = 2;
+    else if (totalDualWidth <= width + FLT_EPSILON) { // Check if there's enough space for 2 columns
+        numberOfColumns = 2;
     }
 
     // Default to 1 column
