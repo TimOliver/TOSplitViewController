@@ -264,104 +264,75 @@
     BOOL expandingSecondary = (newCount == 3); //Expanding 2 to 3
     BOOL expandingPrimary = (newCount == 2);   //Expanding 1 to 2
 
-    UIView *primarySnapshot = nil;
-    UIView *detailSnapshot = nil; // Only needed if size class is changing
+    // The 'before' snapshots we can capture before the rotation
+    UIView *fromPrimarySnapshot = nil;
+    UIView *detailSnapshot = nil;
 
+    // The currently visible view controllers (detail is nil if single column)
     UIViewController *primaryController = self.primaryViewController;
     UIViewController *detailController = self.detailViewController;
 
+    // The current frames for the 1 or 2 controllers
     CGRect primaryFrame = primaryController.view.frame;
     CGRect detailFrame = detailController.view.frame;
 
+    // If expanding to 3 column, take a snapshot of the current primary to crossfade out of
     if (expandingSecondary) {
-        primarySnapshot = [primaryController.view snapshotViewAfterScreenUpdates:NO];
-        [self.view addSubview:primarySnapshot];
+        fromPrimarySnapshot = [primaryController.view snapshotViewAfterScreenUpdates:NO];
+        [self.view addSubview:fromPrimarySnapshot];
+    }
+    else if (expandingPrimary) { //If expanding the single controller, take a screenshot of the full screen
+        detailSnapshot = [primaryController.view snapshotViewAfterScreenUpdates:NO];
+        //[self.view addSubview:detailSnapshot];
     }
 
-    detailSnapshot = [detailController.view snapshotViewAfterScreenUpdates:NO];
-    [self.view addSubview:detailSnapshot];
-
     BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
-    [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
-    [self layoutViewControllersForBoundsSize:size];
-    [self layoutSeparatorViewsForViewControllers];
 
+    // Update the number of view controllers in the stack
+    [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
+
+    // Reposition them to their new frames
+    [self layoutViewControllersForBoundsSize:size];
+
+    // Capture the new view controllers
     UIViewController *newPrimary = self.primaryViewController;
     UIViewController *newSecondary = self.secondaryViewController;
     UIViewController *newDetail = self.detailViewController;
 
-    // Capture the final frames of each controller
+    // Capture the destination frames of each controller
     CGRect newPrimaryFrame = newPrimary.view.frame;
     CGRect newSecondaryFrame = newSecondary.view.frame;
     CGRect newDetailFrame = newDetail.view.frame;
 
+    CGRect primaryOffFrame = newPrimaryFrame;
+    primaryOffFrame.origin.x = - (primaryOffFrame.size.width);
+    primaryOffFrame.size.height = primaryFrame.size.height;
+    newPrimary.view.frame = primaryOffFrame;
+
     // Set them back to where they should be, pre-animation
     if (expandingSecondary) {
-        [self.view bringSubviewToFront:primarySnapshot];
         newDetail.view.frame = detailFrame;
     }
     else if (expandingPrimary) {
         newDetail.view.frame = primaryFrame;
-        detailSnapshot.frame = primaryFrame;
-        [self.view bringSubviewToFront:detailSnapshot];
     }
-
-    __block CGRect frame = newPrimaryFrame;
-    frame.origin.x = -CGRectGetWidth(frame);
-    newPrimary.view.frame = frame;
-
-    UIInterfaceOrientation beforeOrientation = [[UIApplication sharedApplication] statusBarOrientation];
 
     id transitionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
 
-        // To ensure the primary key stays on screen longer, slide it downwards when the rotation
-        // animation is happening clockwise.
-        UIInterfaceOrientation afterOrientation = [[UIApplication sharedApplication] statusBarOrientation];
-        BOOL clockwiseRotation = (beforeOrientation == UIInterfaceOrientationPortrait && afterOrientation == UIInterfaceOrientationLandscapeRight) ||
-        (beforeOrientation == UIInterfaceOrientationPortraitUpsideDown && afterOrientation == UIInterfaceOrientationLandscapeLeft);
+        newPrimary.view.frame = newPrimaryFrame;
 
-        frame.origin.y = clockwiseRotation ? size.height - newPrimaryFrame.size.height : 0.0f;
-
-        newDetail.view.frame = newDetailFrame;
         detailSnapshot.frame = newDetailFrame;
-
         detailSnapshot.alpha = 0.0f;
 
-        if (expandingSecondary) {
-            primarySnapshot.frame = newSecondaryFrame;
-            primarySnapshot.alpha = 0.0f;
-        }
-        else {
-            primarySnapshot.frame = newPrimaryFrame;
-        }
+        newDetail.view.frame = newDetailFrame;
 
-        // Perform the silly Core Animation hack on both the primary
-        // and secondary controllers
-        [newPrimary.view.layer removeAllAnimations];
-        [newSecondary.view.layer removeAllAnimations];
-
-        newPrimary.view.frame = frame;
-        newSecondary.view.frame = primaryFrame;
-
-        [UIView animateWithDuration:context.transitionDuration
-                              delay:0.0f
-                            options:UIViewAnimationOptionCurveEaseInOut
-                         animations:^{
-                             newPrimary.view.frame = newPrimaryFrame;
-                             newSecondary.view.frame = newSecondaryFrame;
-
-                             for (UIView *view in newPrimary.view.subviews) {
-                                 [view.layer removeAllAnimations];
-                             }
-                         }
-                         completion:nil];
-
-        [self layoutSeparatorViewsForViewControllers];
+        //[self layoutSeparatorViewsForViewControllers];
     };
 
     id completionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
-        [self removeSeparatorViewsForViewControllers];
-        [primarySnapshot removeFromSuperview];
+
+        //[self removeSeparatorViewsForViewControllers];
+        [fromPrimarySnapshot removeFromSuperview];
         [detailSnapshot removeFromSuperview];
     };
     [coordinator animateAlongsideTransition:transitionBlock completion:completionBlock];
@@ -374,6 +345,7 @@
     [controller willMoveToParentViewController:self];
     [self addChildViewController:controller];
     [self.view addSubview:controller.view];
+    controller.view.autoresizingMask = UIViewAutoresizingNone; // Disable s
     [controller didMoveToParentViewController:self];
 }
 
