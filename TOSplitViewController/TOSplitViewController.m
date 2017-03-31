@@ -94,7 +94,7 @@
     BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
     [self layoutViewControllersForBoundsSize:size];
-    [self layoutSeparatorViewsForViewControllers];
+    [self layoutSeparatorViewsForViewControllersWithHeight:size.height];
 }
 
 - (void)willTransitionToTraitCollection:(UITraitCollection *)newCollection withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
@@ -150,21 +150,22 @@
     // Generate a snapshot view of the primary view controller
     UIViewController *primaryViewController = self.primaryViewController;
     primarySnapshot = [primaryViewController.view snapshotViewAfterScreenUpdates:NO];
-    [self.view addSubview:primarySnapshot];
+    [self.view insertSubview:primarySnapshot aboveSubview:primaryViewController.view];
 
     // If we're going to collapse the secondary into the primary, generate a snapshot for it
     if (collapsingSecondary) {
         UIViewController *secondaryViewController = self.secondaryViewController;
         secondarySnapshot = [secondaryViewController.view snapshotViewAfterScreenUpdates:NO];
         secondarySnapshot.frame = secondaryViewController.view.frame;
-        [self.view addSubview:secondarySnapshot];
     }
     else if (collapsingDetail) { // Generate a snapshot of the detail controller if we're collapshing to 1
         UIViewController *detailViewController = self.detailViewController;
         detailSnapshot = [detailViewController.view snapshotViewAfterScreenUpdates:NO];
         detailSnapshot.frame = detailViewController.view.frame;
-        [self.view addSubview:detailSnapshot];
+        [self.view insertSubview:detailSnapshot aboveSubview:detailViewController.view];
     }
+
+    [self resetSeparatorViewsForViewControllers];
 
     // Perform the collapse of all of the controllers. This will remove a view controller, but
     // not perform the layout yet
@@ -176,15 +177,23 @@
     CGRect newPrimaryFrame = self.primaryViewController.view.frame;
     CGRect newDetailFrame = self.detailViewController.view.frame;
 
+    NSArray *viewsForSeparators = nil;
+
     // Restore the controllers back to their previous state so we can animate them
     if (collapsingSecondary) {
         self.primaryViewController.view.frame = secondaryFrame;
         self.detailViewController.view.frame = detailFrame;
+        [self.view insertSubview:secondarySnapshot aboveSubview:self.primaryViewController.view];
+
+        viewsForSeparators = @[primarySnapshot, self.primaryViewController.view, self.detailViewController.view];
     }
     else if (collapsingDetail) {
         self.primaryViewController.view.frame = detailFrame;
-        [self.view bringSubviewToFront:detailSnapshot];
+        [self.view insertSubview:detailSnapshot aboveSubview:self.primaryViewController.view];
+
+        viewsForSeparators = @[primarySnapshot, self.primaryViewController.view];
     }
+    [self layoutSeparatorViewsForViews:viewsForSeparators height:self.view.bounds.size.height];
 
     // Capture the current screen orientation
     UIInterfaceOrientation beforeOrientation = [[UIApplication sharedApplication] statusBarOrientation];
@@ -207,9 +216,6 @@
         UIViewController *primaryViewController = self.primaryViewController;
         UIViewController *detailViewController = self.detailViewController;
 
-        // Capture the views in which the separators should track
-        NSArray *views = nil;
-
         // Cross fade the secondary snapshot over the new primary
         if (collapsingSecondary) {
             // animate the snapshot
@@ -231,8 +237,6 @@
                                 options:UIViewAnimationOptionCurveEaseInOut
                              animations:^{ primaryViewController.view.frame = newPrimaryFrame; }
                              completion:nil];
-
-            views = @[primarySnapshot, secondarySnapshot, detailViewController.view];
         }
         else if (collapsingDetail) {
             CGRect toFrame = (CGRect){CGPointZero, size};
@@ -241,11 +245,9 @@
             // Animate the detail view crossfading to the new one
             detailSnapshot.frame = toFrame;
             detailSnapshot.alpha = 0.0f;
-
-            views = @[primarySnapshot, primaryViewController.view];
         }
 
-        [self layoutSeparatorViewsForViews:views];
+        [self layoutSeparatorViewsForViews:viewsForSeparators height:size.height];
     };
 
     id completionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
@@ -253,7 +255,7 @@
         [secondarySnapshot removeFromSuperview];
         [primarySnapshot removeFromSuperview];
 
-        [self removeSeparatorViewsForViewControllers];
+        [self resetSeparatorViewsForViewControllers];
     };
 
     [coordinator animateAlongsideTransition:transitionBlock completion:completionBlock];
@@ -265,7 +267,7 @@
     BOOL expandingPrimary = (newCount == 2);   //Expanding 1 to 2
 
     // The 'before' snapshots we can capture before the rotation
-    UIView *fromPrimarySnapshot = nil;
+    UIView *primarySnapshot = nil;
     UIView *detailSnapshot = nil;
 
     // The currently visible view controllers (detail is nil if single column)
@@ -278,17 +280,17 @@
 
     // If expanding to 3 column, take a snapshot of the current primary to crossfade out of
     if (expandingSecondary) {
-        fromPrimarySnapshot = [primaryController.view snapshotViewAfterScreenUpdates:NO];
-        [self.view addSubview:fromPrimarySnapshot];
+        primarySnapshot = [primaryController.view snapshotViewAfterScreenUpdates:NO];
     }
     else if (expandingPrimary) { //If expanding the single controller, take a screenshot of the full screen
         detailSnapshot = [primaryController.view snapshotViewAfterScreenUpdates:NO];
-        //[self.view addSubview:detailSnapshot];
+        [self.view insertSubview:detailSnapshot aboveSubview:primaryController.view];
     }
 
-    BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
+    [self resetSeparatorViewsForViewControllers];
 
     // Update the number of view controllers in the stack
+    BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
 
     // Reposition them to their new frames
@@ -304,35 +306,67 @@
     CGRect newSecondaryFrame = newSecondary.view.frame;
     CGRect newDetailFrame = newDetail.view.frame;
 
+    // Create a version of the primary frame that's offscreen
     CGRect primaryOffFrame = newPrimaryFrame;
-    primaryOffFrame.origin.x = - (primaryOffFrame.size.width);
+    primaryOffFrame.origin.x = -(primaryOffFrame.size.width);
     primaryOffFrame.size.height = primaryFrame.size.height;
     newPrimary.view.frame = primaryOffFrame;
 
+    NSArray *viewsForSeparators = nil;
+
     // Set them back to where they should be, pre-animation
     if (expandingSecondary) {
+        newSecondary.view.frame = primaryFrame;
+        [self.view insertSubview:primarySnapshot aboveSubview:newSecondary.view];
+
+        // Force a relayout of the second view controller as it was JUST created
+        [newSecondary.view setNeedsLayout];
+        [newSecondary.view layoutIfNeeded];
+
         newDetail.view.frame = detailFrame;
+
+        viewsForSeparators = @[newPrimary.view, newSecondary.view, newDetail.view];
     }
     else if (expandingPrimary) {
         newDetail.view.frame = primaryFrame;
+        detailSnapshot.frame = primaryFrame;
+        [self.view insertSubview:detailSnapshot aboveSubview:newDetail.view];
+        viewsForSeparators = @[newPrimary.view, newDetail.view];
     }
+    [self layoutSeparatorViewsForViews:viewsForSeparators height:self.view.bounds.size.height];
+
+    [newPrimary.view setNeedsLayout];
+    [newPrimary.view layoutIfNeeded];
 
     id transitionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
 
-        newPrimary.view.frame = newPrimaryFrame;
+        newSecondary.view.frame = newSecondaryFrame;
+
+        primarySnapshot.frame = newSecondaryFrame;
+        primarySnapshot.alpha = 0.0f;
 
         detailSnapshot.frame = newDetailFrame;
         detailSnapshot.alpha = 0.0f;
 
-        newDetail.view.frame = newDetailFrame;
+        [newPrimary.view.layer removeAllAnimations];
 
-        //[self layoutSeparatorViewsForViewControllers];
+        newPrimary.view.frame = primaryOffFrame;
+        [UIView animateWithDuration:context.transitionDuration
+                              delay:0.0f
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:^{
+                             newPrimary.view.frame = newPrimaryFrame;
+                             [self layoutSeparatorViewsForViews:viewsForSeparators height:size.height];
+                         }
+                         completion:nil];
+
+        newDetail.view.frame = newDetailFrame;
     };
 
     id completionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
-
-        //[self removeSeparatorViewsForViewControllers];
-        [fromPrimarySnapshot removeFromSuperview];
+        [primarySnapshot removeFromSuperview];
+        [detailSnapshot removeFromSuperview];
+        [self resetSeparatorViewsForViewControllers];
         [detailSnapshot removeFromSuperview];
     };
     [coordinator animateAlongsideTransition:transitionBlock completion:completionBlock];
@@ -344,7 +378,7 @@
 {
     [controller willMoveToParentViewController:self];
     [self addChildViewController:controller];
-    [self.view addSubview:controller.view];
+    [self.view insertSubview:controller.view atIndex:0];
     controller.view.autoresizingMask = UIViewAutoresizingNone; // Disable s
     [controller didMoveToParentViewController:self];
 }
@@ -414,17 +448,17 @@
     }
 }
 
-- (void)layoutSeparatorViewsForViewControllers
+- (void)layoutSeparatorViewsForViewControllersWithHeight:(CGFloat)height
 {
     NSMutableArray *views = [NSMutableArray array];
     for (UIViewController *controller in self.viewControllers) {
         [views addObject:controller.view];
     }
 
-    [self layoutSeparatorViewsForViews:views];
+    [self layoutSeparatorViewsForViews:views height:height];
 }
 
-- (void)layoutSeparatorViewsForViews:(NSArray<UIView *> *)views
+- (void)layoutSeparatorViewsForViews:(NSArray<UIView *> *)views height:(CGFloat)height
 {
     NSInteger i = 0;
     CGFloat width = 1.0f / [[UIScreen mainScreen] scale];
@@ -433,7 +467,6 @@
             break;
         }
 
-        CGFloat height = view.frame.size.height;
         CGRect frame = CGRectMake(0.0f, 0.0f, width, height);
         UIView *separator = self.separatorViews[i++];
         frame.origin.x = CGRectGetMaxX(view.frame) - width;
@@ -445,7 +478,7 @@
     }
 }
 
-- (void)removeSeparatorViewsForViewControllers
+- (void)resetSeparatorViewsForViewControllers
 {
     NSInteger numberOfVisibleSeparators = 0;
     for (UIView *separatorView in self.separatorViews) {
