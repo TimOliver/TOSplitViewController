@@ -18,6 +18,8 @@
     } _delegateFlags;
 }
 
+@property (nonatomic, strong) NSMutableArray *visibleViewControllers;
+
 // The separator lines between view controllers
 @property (nonatomic, strong) NSArray<UIView *> *separatorViews;
 
@@ -46,7 +48,7 @@
 - (void)setUp
 {
     // Primary Column
-    _primaryColumnMinimumWidth = 274.0f;
+    _primaryColumnMinimumWidth = 264.0f;
     _primaryColumnMaximumWidth = 400.0f;
     _preferredPrimaryColumnWidthFraction = 0.38f;
 
@@ -55,7 +57,7 @@
     _secondaryColumnMaximumWidth = 400.0f;
 
     // Detail Column
-    _detailColumnMinimumWidth = 420.0f;
+    _detailColumnMinimumWidth = 430.0f;
 
     // State data
     _maximumNumberOfColumns = 3;
@@ -97,6 +99,7 @@
     BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
     [self layoutViewControllersForBoundsSize:size];
+    [self resetSeparatorViewsForViewControllers];
     [self layoutSeparatorViewsForViewControllersWithHeight:size.height];
 }
 
@@ -116,34 +119,42 @@
 {
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
 
+    // When the view isn't animated (eg, split screen resizes), just force a complete manual layout
     if (coordinator.isAnimated == NO) {
         [self layoutSplitViewControllerContentForSize:size];
         return;
     }
 
+    // Get the number of columns this new size can theoretically fit
     NSInteger newNumberOfColumns = [self possibleNumberOfColumnsForWidth:size.width];
 
-    // If we can't simply resize the columns, perform a 'collapse' or 'expand' animation
-    if (self.view && newNumberOfColumns != self.viewControllers.count) {
-        if (newNumberOfColumns < self.viewControllers.count) {
-            [self transitionToCollapsedViewControllerCount:newNumberOfColumns withSize:size withTransitionCoordinator:coordinator];
-        }
-        else {
-            [self transitionToExpandedViewControllerCount:newNumberOfColumns withSize:size withTransitionCoordinator:coordinator];
+    // If the column numbers don't match, do an expand/collapse animation.
+    // But since there's a possibility the delegate indicates there aren't enough view controllers
+    // to do this, account for the fact these operations 'may' fail, and default to the screen resize in that case
+    if (newNumberOfColumns != self.viewControllers.count) {
+        BOOL success = NO;
+        @autoreleasepool {
+            if (newNumberOfColumns < self.viewControllers.count) {
+                success = [self transitionToCollapsedViewControllerCount:newNumberOfColumns withSize:size withTransitionCoordinator:coordinator];
+            }
+            else {
+                success = [self transitionToExpandedViewControllerCount:newNumberOfColumns withSize:size withTransitionCoordinator:coordinator];
+            }
         }
 
-        return;
+        if (success) { return; }
     }
 
-    // Animate the view controllers resizing
+    // If it's not possible to do an expand/collapse animation, just animate the current controllers resizing
     [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext>  _Nonnull context) {
         [self layoutViewControllersForBoundsSize:size];
         [self layoutSeparatorViewsForViewControllersWithHeight:size.height];
     } completion:nil];
 }
 
-- (void)transitionToCollapsedViewControllerCount:(NSInteger)newCount withSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
+- (BOOL)transitionToCollapsedViewControllerCount:(NSInteger)newCount withSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
 {
+    NSInteger numberOfColumns = self.viewControllers.count;
     BOOL collapsingSecondary = (newCount == 2); //Collapsing 3 to 2
     BOOL collapsingDetail = (newCount == 1);    //Collapsing 2 to 1
 
@@ -159,10 +170,9 @@
     // Generate a snapshot view of the primary view controller
     UIViewController *primaryViewController = self.primaryViewController;
     primarySnapshot = [primaryViewController.view snapshotViewAfterScreenUpdates:NO];
-    [self.view insertSubview:primarySnapshot aboveSubview:primaryViewController.view];
 
     //FIXME - Make this a better check
-    if (primarySnapshot == nil) { return; }
+    if (primarySnapshot == nil) { return NO; }
 
     // If we're going to collapse the secondary into the primary, generate a snapshot for it
     if (collapsingSecondary) {
@@ -174,7 +184,6 @@
         UIViewController *detailViewController = self.detailViewController;
         detailSnapshot = [detailViewController.view snapshotViewAfterScreenUpdates:NO];
         detailSnapshot.frame = detailViewController.view.frame;
-        [self.view insertSubview:detailSnapshot aboveSubview:detailViewController.view];
     }
 
     [self resetSeparatorViewsForViewControllers];
@@ -183,11 +192,18 @@
     // not perform the layout yet
     BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
+    if (self.viewControllers.count == numberOfColumns) {
+        return NO;
+    }
+
     [self layoutViewControllersForBoundsSize:size];
 
     // Save the newly calculated frames so we can apply them in an animation
     CGRect newPrimaryFrame = self.primaryViewController.view.frame;
     CGRect newDetailFrame = self.detailViewController.view.frame;
+
+    // Insert the primary view
+    [self.view insertSubview:primarySnapshot atIndex:0];
 
     NSArray *viewsForSeparators = nil;
 
@@ -271,10 +287,14 @@
     };
 
     [coordinator animateAlongsideTransition:transitionBlock completion:completionBlock];
+
+    return YES;
 }
 
-- (void)transitionToExpandedViewControllerCount:(NSInteger)newCount withSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
+- (BOOL)transitionToExpandedViewControllerCount:(NSInteger)newCount withSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
 {
+    NSInteger numberOfColumns = self.viewControllers.count;
+
     BOOL expandingSecondary = (newCount == 3); //Expanding 2 to 3
     BOOL expandingPrimary = (newCount == 2);   //Expanding 1 to 2
 
@@ -296,7 +316,6 @@
     }
     else if (expandingPrimary) { //If expanding the single controller, take a screenshot of the full screen
         detailSnapshot = [primaryController.view snapshotViewAfterScreenUpdates:NO];
-        [self.view insertSubview:detailSnapshot aboveSubview:primaryController.view];
     }
 
     [self resetSeparatorViewsForViewControllers];
@@ -304,6 +323,9 @@
     // Update the number of view controllers in the stack
     BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
+    if (numberOfColumns == self.viewControllers.count) {
+        return NO;
+    }
 
     // Reposition them to their new frames
     [self layoutViewControllersForBoundsSize:size];
@@ -375,6 +397,8 @@
         [detailSnapshot removeFromSuperview];
     };
     [coordinator animateAlongsideTransition:transitionBlock completion:completionBlock];
+
+    return YES;
 }
 
 #pragma mark - Column Setup & Management -
@@ -384,7 +408,7 @@
     [controller willMoveToParentViewController:self];
     [self addChildViewController:controller];
     [self.view insertSubview:controller.view atIndex:0];
-    controller.view.autoresizingMask = UIViewAutoresizingNone; // Disable s
+    controller.view.autoresizingMask = UIViewAutoresizingNone; // Disable auto resize mask because it otherwise breaks some animationsO
     [controller didMoveToParentViewController:self];
 }
 
@@ -411,6 +435,7 @@
     UIViewController *secondaryController = self.secondaryViewController;
     UIViewController *detailController = self.detailViewController;
 
+    // Laying out three columns
     if (numberOfColumns == 3) {
         CGFloat idealPrimaryWidth = self.primaryColumnMinimumWidth;
         CGFloat idealSecondaryWidth = self.secondaryColumnMinimumWidth;
@@ -422,6 +447,7 @@
             padding = floorf(delta / 3.0f);
         }
 
+        // Update the frames for each controller
         frame.size = size;
         frame.size.width = idealPrimaryWidth + padding;
         primaryController.view.frame = frame;
@@ -434,11 +460,21 @@
         frame.size.width = size.width - frame.origin.x;
         detailController.view.frame = frame;
 
+        // Set the size classes for each controller
+        UITraitCollection *horizontalSizeClassCompact = [UITraitCollection traitCollectionWithHorizontalSizeClass:UIUserInterfaceSizeClassCompact];
+
+        UITraitCollection *primaryTraitCollection = [UITraitCollection traitCollectionWithTraitsFromCollections:@[primaryController.traitCollection, horizontalSizeClassCompact]];
+        [self setOverrideTraitCollection:primaryTraitCollection forChildViewController:primaryController];
+
+        UITraitCollection *secondaryTraitCollection = [UITraitCollection traitCollectionWithTraitsFromCollections:@[secondaryController.traitCollection, horizontalSizeClassCompact]];
+        [self setOverrideTraitCollection:secondaryTraitCollection forChildViewController:secondaryController];
+
+        // Update the layout
         [primaryController.view layoutIfNeeded];
         [secondaryController.view layoutIfNeeded];
         [detailController.view layoutIfNeeded];
     }
-    else if (numberOfColumns == 2) {
+    else if (numberOfColumns == 2) { // Laying out two columns
         CGFloat idealPrimaryWidth = (size.width * self.preferredPrimaryColumnWidthFraction);
         idealPrimaryWidth = MAX(self.primaryColumnMinimumWidth, idealPrimaryWidth);
         idealPrimaryWidth = MIN(self.primaryColumnMaximumWidth, idealPrimaryWidth);
@@ -450,6 +486,11 @@
         frame.origin.x = CGRectGetMaxX(frame);
         frame.size.width = size.width - frame.origin.x;
         detailController.view.frame = frame;
+
+        UITraitCollection *horizontalSizeClassCompact = [UITraitCollection traitCollectionWithHorizontalSizeClass:UIUserInterfaceSizeClassCompact];
+
+        UITraitCollection *primaryTraitCollection = [UITraitCollection traitCollectionWithTraitsFromCollections:@[primaryController.traitCollection, horizontalSizeClassCompact]];
+        [self setOverrideTraitCollection:primaryTraitCollection forChildViewController:primaryController];
 
         [primaryController.view layoutIfNeeded];
         [detailController.view layoutIfNeeded];
@@ -494,23 +535,11 @@
 
 - (void)resetSeparatorViewsForViewControllers
 {
-    NSInteger numberOfVisibleSeparators = 0;
     for (UIView *separatorView in self.separatorViews) {
-        if (separatorView.superview) { numberOfVisibleSeparators++; }
-    }
-
-    // The number of visible separators should always be (viewControllers.count - 1)
-    if (numberOfVisibleSeparators < self.viewControllers.count) {
-        return;
-    }
-
-    NSInteger i = 0;
-    while (numberOfVisibleSeparators >= self.viewControllers.count) {
-        if (i >= self.separatorViews.count) { break; }
-        UIView *separatorView = self.separatorViews[i++];
         [separatorView removeFromSuperview];
-        numberOfVisibleSeparators--;
     }
+
+    [self layoutSeparatorViewsForViewControllersWithHeight:self.view.bounds.size.height];
 }
 
 - (void)updateViewControllersForBoundsSize:(CGSize)size compactSizeClass:(BOOL)compact

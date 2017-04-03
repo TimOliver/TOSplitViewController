@@ -10,14 +10,27 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+typedef NS_ENUM(NSInteger, TOSplitViewControllerType) {
+    TOSplitViewControllerTypePrimary,  // The main view controller. Only this one is visible in compact-width views.
+    TOSplitViewControllerTypeDetail,   // The widest controller, always shown in regular-width views, along the right hand side
+    TOSplitViewControllerTypeSecondary // The most optional controller. Only shown in between the primary and detail controllers when there's enough horizontal space.
+};
+
 @class TOSplitViewController;
 
 @protocol TOSplitViewControllerDelegate <NSObject>
 
 @optional
 
-- (BOOL)splitViewControllerShouldShowSecondaryColumn:(TOSplitViewController *)splitViewController;
+- (BOOL)splitViewController:(TOSplitViewController *)splitViewController
+showSecondaryViewController:(UIViewController *)vc
+                     sender:(nullable id)sender;
 
+- (BOOL)splitViewController:(TOSplitViewController *)splitViewController
+   showDetailViewController:(UIViewController *)vc
+                     sender:(nullable id)sender;
+
+//--
 - (nullable UIViewController *)primaryViewControllerForCollapsingSplitViewController:(TOSplitViewController *)splitViewController
                                                          fromSecondaryViewController:(UIViewController *)secondaryViewController;
 
@@ -29,6 +42,22 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
         expandDetailViewControllerFromPrimaryViewController:(UIViewController *)primaryViewController;
+//--
+
+- (BOOL)splitViewController:(TOSplitViewController *)splitViewController
+     collapseViewController:(UIViewController *)auxiliaryViewController
+                     ofType:(TOSplitViewControllerType)controllerType
+  ontoPrimaryViewController:(UIViewController *)primaryViewController;
+
+- (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
+                      separateViewControllerOfType:(TOSplitViewControllerType)type
+                         fromPrimaryViewController:(UIViewController *)primaryViewController;
+
+- (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
+        primaryViewControllerForCollapsingFromType:(TOSplitViewControllerType)type;
+
+- (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
+           primaryViewControllerForExpandingToType:(TOSplitViewControllerType)type;
 
 @end
 
