@@ -360,11 +360,8 @@
 
     // Set them back to where they should be, pre-animation
     if (expandingSecondary) {
-        newSecondary.view.frame = primaryFrame;
         [self.view insertSubview:primarySnapshot aboveSubview:newSecondary.view];
-
         newDetail.view.frame = detailFrame;
-
         viewsForSeparators = @[newPrimary.view, newSecondary.view, newDetail.view];
     }
     else if (expandingPrimary) {
@@ -377,8 +374,6 @@
 
     id transitionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
 
-        newSecondary.view.frame = newSecondaryFrame;
-
         primarySnapshot.frame = newSecondaryFrame;
         primarySnapshot.alpha = 0.0f;
 
@@ -386,16 +381,21 @@
         detailSnapshot.alpha = 0.0f;
 
         [newPrimary.view.layer removeAllAnimations];
+        [newSecondary.view.layer removeAllAnimations];
 
         newPrimary.view.frame = primaryOffFrame;
+        newSecondary.view.frame = primaryFrame;
         [UIView animateWithDuration:context.transitionDuration
                               delay:0.0f
                             options:UIViewAnimationOptionCurveEaseInOut
                          animations:^{
                              newPrimary.view.frame = newPrimaryFrame;
+                             newSecondary.view.frame = newSecondaryFrame;
                              [self layoutSeparatorViewsForViews:viewsForSeparators height:size.height];
                          }
-                         completion:nil];
+                         completion:^(BOOL completion) {
+                             [self.view sendSubviewToBack:newPrimary.view];
+                         }];
 
         newDetail.view.frame = newDetailFrame;
     };
@@ -418,6 +418,7 @@
     [controller willMoveToParentViewController:self];
     [self addChildViewController:controller];
     [self.view insertSubview:controller.view atIndex:0];
+    controller.view.clipsToBounds = YES; // Make sure no content will bleed out
     controller.view.autoresizingMask = UIViewAutoresizingNone; // Disable auto resize mask because it otherwise breaks some animationsO
     [controller didMoveToParentViewController:self];
 }
@@ -511,6 +512,11 @@
 
         [primaryController.view layoutIfNeeded];
     }
+
+    // Make sure the views from right-to-left stack on each other
+    [self.view sendSubviewToBack:detailController.view];
+    [self.view sendSubviewToBack:secondaryController.view];
+    [self.view sendSubviewToBack:primaryController.view];
 }
 
 - (void)layoutSeparatorViewsForViewControllersWithHeight:(CGFloat)height
