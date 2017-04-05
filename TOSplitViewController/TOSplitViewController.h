@@ -140,6 +140,10 @@ showSecondaryViewController:(UIViewController *)vc
 
 - (instancetype)initWithViewControllers:(NSArray<UIViewController *> *)viewControllers;
 
+- (void)showSecondaryViewController:(UIViewController *)controller sender:(id)sender;
+
+- (void)showDetailViewController:(UIViewController *)vc sender:(nullable id)sender;
+
 @end
 
 NS_ASSUME_NONNULL_END

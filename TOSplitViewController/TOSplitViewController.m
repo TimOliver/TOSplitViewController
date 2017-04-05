@@ -10,20 +10,28 @@
 
 @interface TOSplitViewController () {
     struct {
-        BOOL showSecondController;
-        BOOL collapseSecondaryToPrimary;
-        BOOL collapseDetailToPrimary;
-        BOOL expandPrimaryToDetail;
+        BOOL showSecondaryViewController;
+        BOOL showDetailViewController;
+        BOOL collapseAuxiliaryToPrimary;
+        BOOL separateFromPrimary;
+        BOOL primaryForCollapsing;
         BOOL expandPrimaryToSecondary;
     } _delegateFlags;
 }
 
+// Child view controllers managed by the split view controller
+//@property (nonatomic, strong) NSMutableArray *viewControllers;
 @property (nonatomic, strong) NSMutableArray *visibleViewControllers;
+
+// Strong references to child controllers so if they are dismissed
+// while in compact mode, we can restore
+@property (nonatomic, strong) NSArray *secondaryChildControllers;
+@property (nonatomic, strong) NSArray *detailChildControllers;
 
 // The separator lines between view controllers
 @property (nonatomic, strong) NSArray<UIView *> *separatorViews;
 
-// The three view controllers, returning nil if not presently visible
+// The three view controllers, if visible. Returns nil otherwise
 @property (nonatomic, readonly) UIViewController *primaryViewController;
 @property (nonatomic, readonly) UIViewController *secondaryViewController;
 @property (nonatomic, readonly) UIViewController *detailViewController;
@@ -558,18 +566,18 @@
 
         // We're collapsing the secondary controller into the primary
         UIViewController *newPrimaryController = nil;
-        if (numberOfColumns == 3) {
-            if (_delegateFlags.collapseSecondaryToPrimary) {
-                newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
-                                                                                fromSecondaryViewController:auxiliaryViewController];
-            }
-        }
-        else if (numberOfColumns == 2) { // We're collapsing the detail controller into the primary
-            if (_delegateFlags.collapseDetailToPrimary) {
-                newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
-                                                                                fromDetailViewController:auxiliaryViewController];
-            }
-        }
+//        if (numberOfColumns == 3) {
+//            if (_delegateFlags.collapseSecondaryToPrimary) {
+//                newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
+//                                                                                fromSecondaryViewController:auxiliaryViewController];
+//            }
+//        }
+//        else if (numberOfColumns == 2) { // We're collapsing the detail controller into the primary
+//            if (_delegateFlags.collapseDetailToPrimary) {
+//                newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
+//                                                                                fromDetailViewController:auxiliaryViewController];
+//            }
+//        }
 
         // If there was a delegate that provided a user-specified view controller, override and replace
         // the current primary controller
@@ -597,17 +605,17 @@
         UIViewController *expandedViewController = nil;
 
         // If we're expanding the primary out into a detail
-        if (numberOfColumns == 1) {
-            if (_delegateFlags.expandPrimaryToDetail) {
-                expandedViewController = [_delegate splitViewController:self expandDetailViewControllerFromPrimaryViewController:sourceViewController];
-            }
-        }
-        else if (numberOfColumns == 2) {
-            if (_delegateFlags.expandPrimaryToSecondary) {
-                expandedViewController = [_delegate splitViewController:self expandSecondaryViewControllerFromPrimaryViewController:sourceViewController];
-            }
-
-        }
+//        if (numberOfColumns == 1) {
+//            if (_delegateFlags.expandPrimaryToDetail) {
+//                expandedViewController = [_delegate splitViewController:self expandDetailViewControllerFromPrimaryViewController:sourceViewController];
+//            }
+//        }
+//        else if (numberOfColumns == 2) {
+//            if (_delegateFlags.expandPrimaryToSecondary) {
+//                expandedViewController = [_delegate splitViewController:self expandSecondaryViewControllerFromPrimaryViewController:sourceViewController];
+//            }
+//
+//        }
 
         // If the delegates failed, try to manually expand the controller if it's a navigation controller
         if (expandedViewController == nil) {
@@ -712,13 +720,12 @@
     if (delegate == _delegate) { return; }
     _delegate = delegate;
 
-    _delegateFlags.showSecondController = [_delegate respondsToSelector:@selector(splitViewControllerShouldShowSecondaryColumn:)];
-    _delegateFlags.collapseSecondaryToPrimary = [_delegate respondsToSelector:@selector(primaryViewControllerForCollapsingSplitViewController:
-                                                                                        fromSecondaryViewController:)];
-    _delegateFlags.collapseDetailToPrimary = [_delegate respondsToSelector:@selector(primaryViewControllerForCollapsingSplitViewController:
-                                                                                     fromDetailViewController:)];
-    _delegateFlags.expandPrimaryToDetail = [_delegate respondsToSelector:@selector(splitViewController:expandDetailViewControllerFromPrimaryViewController:)];
-    _delegateFlags.expandPrimaryToSecondary = [_delegate respondsToSelector:@selector(splitViewController:expandSecondaryViewControllerFromPrimaryViewController:)];
+    _delegateFlags.showSecondaryViewController = [_delegate respondsToSelector:@selector(splitViewController:showSecondaryViewController:sender:)];
+    _delegateFlags.showDetailViewController = [_delegate respondsToSelector:@selector(splitViewController:showDetailViewController:sender:)];
+    _delegateFlags.collapseAuxiliaryToPrimary = [_delegate respondsToSelector:@selector(splitViewController:collapseViewController:ofType:ontoPrimaryViewController:)];
+    _delegateFlags.separateFromPrimary = [_delegate respondsToSelector:@selector(splitViewController:separateViewControllerOfType:fromPrimaryViewController:)];
+    _delegateFlags.primaryForCollapsing = [_delegate respondsToSelector:@selector(splitViewController:primaryViewControllerForCollapsingFromType:)];
+    _delegateFlags.expandPrimaryToSecondary = [_delegate respondsToSelector:@selector(splitViewController:primaryViewControllerForExpandingToType:)];
 }
 
 #pragma mark - Internal Accessors -

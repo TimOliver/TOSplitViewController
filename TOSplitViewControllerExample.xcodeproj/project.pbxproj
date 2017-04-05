@@ -14,7 +14,20 @@
 		224719F61E791A5D000886F9 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 224719F41E791A5D000886F9 /* LaunchScreen.storyboard */; };
 		22DB97C81E7E7D4C007C516B /* ListTableViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 22DB97C71E7E7D4C007C516B /* ListTableViewController.m */; };
 		22DB97CB1E7E7D69007C516B /* DetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 22DB97CA1E7E7D69007C516B /* DetailViewController.m */; };
+		22F724681E94B17D00CE38A8 /* UINavigationController+TOSplitViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 22F724671E94B17D00CE38A8 /* UINavigationController+TOSplitViewController.m */; };
+		22F724701E94C22200CE38A8 /* TOSplitViewControllerExampleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 22F7246F1E94C22200CE38A8 /* TOSplitViewControllerExampleTests.m */; };
+		22F724781E94C49E00CE38A8 /* TONavigationControllerCategoryTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 22F724771E94C49E00CE38A8 /* TONavigationControllerCategoryTests.m */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		22F724721E94C22200CE38A8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 224719DB1E791A5D000886F9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 224719E21E791A5D000886F9;
+			remoteInfo = TOSplitViewControllerExample;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		223D6A101E791D68000BE0D7 /* TOSplitViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TOSplitViewController.h; sourceTree = "<group>"; };
@@ -30,10 +43,23 @@
 		22DB97C71E7E7D4C007C516B /* ListTableViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ListTableViewController.m; sourceTree = "<group>"; };
 		22DB97C91E7E7D69007C516B /* DetailViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DetailViewController.h; sourceTree = "<group>"; };
 		22DB97CA1E7E7D69007C516B /* DetailViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DetailViewController.m; sourceTree = "<group>"; };
+		22F724661E94B17D00CE38A8 /* UINavigationController+TOSplitViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UINavigationController+TOSplitViewController.h"; sourceTree = "<group>"; };
+		22F724671E94B17D00CE38A8 /* UINavigationController+TOSplitViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UINavigationController+TOSplitViewController.m"; sourceTree = "<group>"; };
+		22F7246D1E94C22200CE38A8 /* TOSplitViewControllerExampleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TOSplitViewControllerExampleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		22F7246F1E94C22200CE38A8 /* TOSplitViewControllerExampleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TOSplitViewControllerExampleTests.m; sourceTree = "<group>"; };
+		22F724711E94C22200CE38A8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		22F724771E94C49E00CE38A8 /* TONavigationControllerCategoryTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TONavigationControllerCategoryTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		224719E01E791A5D000886F9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		22F7246A1E94C22200CE38A8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -48,6 +74,8 @@
 			children = (
 				223D6A101E791D68000BE0D7 /* TOSplitViewController.h */,
 				223D6A111E791D68000BE0D7 /* TOSplitViewController.m */,
+				22F724651E94B07C00CE38A8 /* Models */,
+				22F724641E94B07600CE38A8 /* Categories */,
 			);
 			path = TOSplitViewController;
 			sourceTree = "<group>";
@@ -57,6 +85,7 @@
 			children = (
 				223D6A0F1E791D1C000BE0D7 /* TOSplitViewController */,
 				224719E51E791A5D000886F9 /* TOSplitViewControllerExample */,
+				22F7246E1E94C22200CE38A8 /* TOSplitViewControllerExampleTests */,
 				224719E41E791A5D000886F9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -65,6 +94,7 @@
 			isa = PBXGroup;
 			children = (
 				224719E31E791A5D000886F9 /* TOSplitViewControllerExample.app */,
+				22F7246D1E94C22200CE38A8 /* TOSplitViewControllerExampleTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -94,6 +124,32 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		22F724641E94B07600CE38A8 /* Categories */ = {
+			isa = PBXGroup;
+			children = (
+				22F724661E94B17D00CE38A8 /* UINavigationController+TOSplitViewController.h */,
+				22F724671E94B17D00CE38A8 /* UINavigationController+TOSplitViewController.m */,
+			);
+			path = Categories;
+			sourceTree = "<group>";
+		};
+		22F724651E94B07C00CE38A8 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		22F7246E1E94C22200CE38A8 /* TOSplitViewControllerExampleTests */ = {
+			isa = PBXGroup;
+			children = (
+				22F7246F1E94C22200CE38A8 /* TOSplitViewControllerExampleTests.m */,
+				22F724771E94C49E00CE38A8 /* TONavigationControllerCategoryTests.m */,
+				22F724711E94C22200CE38A8 /* Info.plist */,
+			);
+			path = TOSplitViewControllerExampleTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -114,6 +170,24 @@
 			productReference = 224719E31E791A5D000886F9 /* TOSplitViewControllerExample.app */;
 			productType = "com.apple.product-type.application";
 		};
+		22F7246C1E94C22200CE38A8 /* TOSplitViewControllerExampleTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 22F724741E94C22200CE38A8 /* Build configuration list for PBXNativeTarget "TOSplitViewControllerExampleTests" */;
+			buildPhases = (
+				22F724691E94C22200CE38A8 /* Sources */,
+				22F7246A1E94C22200CE38A8 /* Frameworks */,
+				22F7246B1E94C22200CE38A8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				22F724731E94C22200CE38A8 /* PBXTargetDependency */,
+			);
+			name = TOSplitViewControllerExampleTests;
+			productName = TOSplitViewControllerExampleTests;
+			productReference = 22F7246D1E94C22200CE38A8 /* TOSplitViewControllerExampleTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -127,6 +201,12 @@
 						CreatedOnToolsVersion = 8.2;
 						DevelopmentTeam = 6LF3GMKZAB;
 						ProvisioningStyle = Automatic;
+					};
+					22F7246C1E94C22200CE38A8 = {
+						CreatedOnToolsVersion = 8.3;
+						DevelopmentTeam = 6LF3GMKZAB;
+						ProvisioningStyle = Automatic;
+						TestTargetID = 224719E21E791A5D000886F9;
 					};
 				};
 			};
@@ -144,6 +224,7 @@
 			projectRoot = "";
 			targets = (
 				224719E21E791A5D000886F9 /* TOSplitViewControllerExample */,
+				22F7246C1E94C22200CE38A8 /* TOSplitViewControllerExampleTests */,
 			);
 		};
 /* End PBXProject section */
@@ -158,6 +239,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		22F7246B1E94C22200CE38A8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -165,6 +253,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22F724681E94B17D00CE38A8 /* UINavigationController+TOSplitViewController.m in Sources */,
 				22DB97CB1E7E7D69007C516B /* DetailViewController.m in Sources */,
 				223D6A121E791D68000BE0D7 /* TOSplitViewController.m in Sources */,
 				224719EB1E791A5D000886F9 /* AppDelegate.m in Sources */,
@@ -173,7 +262,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		22F724691E94C22200CE38A8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				22F724781E94C49E00CE38A8 /* TONavigationControllerCategoryTests.m in Sources */,
+				22F724701E94C22200CE38A8 /* TOSplitViewControllerExampleTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		22F724731E94C22200CE38A8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 224719E21E791A5D000886F9 /* TOSplitViewControllerExample */;
+			targetProxy = 22F724721E94C22200CE38A8 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		224719F41E791A5D000886F9 /* LaunchScreen.storyboard */ = {
@@ -303,6 +409,36 @@
 			};
 			name = Release;
 		};
+		22F724751E94C22200CE38A8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				DEVELOPMENT_TEAM = 6LF3GMKZAB;
+				INFOPLIST_FILE = TOSplitViewControllerExampleTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = pub.tim.TOSplitViewControllerExampleTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TOSplitViewControllerExample.app/TOSplitViewControllerExample";
+			};
+			name = Debug;
+		};
+		22F724761E94C22200CE38A8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				DEVELOPMENT_TEAM = 6LF3GMKZAB;
+				INFOPLIST_FILE = TOSplitViewControllerExampleTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = pub.tim.TOSplitViewControllerExampleTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TOSplitViewControllerExample.app/TOSplitViewControllerExample";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -323,6 +459,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		22F724741E94C22200CE38A8 /* Build configuration list for PBXNativeTarget "TOSplitViewControllerExampleTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				22F724751E94C22200CE38A8 /* Debug */,
+				22F724761E94C22200CE38A8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};
