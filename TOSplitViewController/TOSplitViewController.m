@@ -7,6 +7,7 @@
 //
 
 #import "TOSplitViewController.h"
+#import "UINavigationController+TOSplitViewController.h"
 
 @interface TOSplitViewController () {
     struct {
@@ -20,7 +21,7 @@
 }
 
 // Child view controllers managed by the split view controller
-//@property (nonatomic, strong) NSMutableArray *viewControllers;
+@property (nonatomic, strong) NSMutableArray *allViewControllers;
 @property (nonatomic, strong) NSMutableArray *visibleViewControllers;
 
 // Strong references to child controllers so if they are dismissed
@@ -46,7 +47,7 @@
 - (instancetype)initWithViewControllers:(NSArray<UIViewController *> *)viewControllers
 {
     if (self = [super init]) {
-        _viewControllers = [viewControllers copy];
+        _allViewControllers = [viewControllers copy];
         [self setUp];
     }
 
@@ -80,9 +81,10 @@
     self.view.backgroundColor = [UIColor whiteColor];
 
     self.horizontalSizeClass = self.view.traitCollection.horizontalSizeClass;
+    self.visibleViewControllers = [NSMutableArray arrayWithArray:self.allViewControllers];
 
     //Add all of the view controllers
-    for (UIViewController *controller in self.viewControllers) {
+    for (UIViewController *controller in self.visibleViewControllers) {
         [self addSplitViewControllerChildViewController:controller];
     }
 
@@ -139,10 +141,10 @@
     // If the column numbers don't match, do an expand/collapse animation.
     // But since there's a possibility the delegate indicates there aren't enough view controllers
     // to do this, account for the fact these operations 'may' fail, and default to the screen resize in that case
-    if (newNumberOfColumns != self.viewControllers.count) {
+    if (newNumberOfColumns != self.visibleViewControllers.count) {
         BOOL success = NO;
         @autoreleasepool {
-            if (newNumberOfColumns < self.viewControllers.count) {
+            if (newNumberOfColumns < self.visibleViewControllers.count) {
                 success = [self transitionToCollapsedViewControllerCount:newNumberOfColumns withSize:size withTransitionCoordinator:coordinator];
             }
             else {
@@ -162,7 +164,7 @@
 
 - (BOOL)transitionToCollapsedViewControllerCount:(NSInteger)newCount withSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
 {
-    NSInteger numberOfColumns = self.viewControllers.count;
+    NSInteger numberOfColumns = self.visibleViewControllers.count;
     BOOL collapsingSecondary = (newCount == 2); //Collapsing 3 to 2
     BOOL collapsingDetail = (newCount == 1);    //Collapsing 2 to 1
 
@@ -200,7 +202,7 @@
     // not perform the layout yet
     BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
-    if (self.viewControllers.count == numberOfColumns) {
+    if (self.visibleViewControllers.count == numberOfColumns) {
         return NO;
     }
 
@@ -301,7 +303,7 @@
 
 - (BOOL)transitionToExpandedViewControllerCount:(NSInteger)newCount withSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
 {
-    NSInteger numberOfColumns = self.viewControllers.count;
+    NSInteger numberOfColumns = self.visibleViewControllers.count;
 
     BOOL expandingSecondary = (newCount == 3); //Expanding 2 to 3
     BOOL expandingPrimary = (newCount == 2);   //Expanding 1 to 2
@@ -331,7 +333,7 @@
     // Update the number of view controllers in the stack
     BOOL compact = (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact);
     [self updateViewControllersForBoundsSize:size compactSizeClass:compact];
-    if (numberOfColumns == self.viewControllers.count) {
+    if (numberOfColumns == self.visibleViewControllers.count) {
         return NO;
     }
 
@@ -431,7 +433,7 @@
 
 - (void)layoutViewControllersForBoundsSize:(CGSize)size
 {
-    NSInteger numberOfColumns = self.viewControllers.count;
+    NSInteger numberOfColumns = self.visibleViewControllers.count;
     if (numberOfColumns == 0) {
         return;
     }
@@ -514,7 +516,7 @@
 - (void)layoutSeparatorViewsForViewControllersWithHeight:(CGFloat)height
 {
     NSMutableArray *views = [NSMutableArray array];
-    for (UIViewController *controller in self.viewControllers) {
+    for (UIViewController *controller in self.visibleViewControllers) {
         [views addObject:controller.view];
     }
 
@@ -552,12 +554,12 @@
 
 - (void)updateViewControllersForBoundsSize:(CGSize)size compactSizeClass:(BOOL)compact
 {
-    NSInteger numberOfColumns    = self.viewControllers.count;
+    NSInteger numberOfColumns    = self.visibleViewControllers.count;
     NSInteger newNumberOfColumns = [self possibleNumberOfColumnsForWidth:size.width];
 
     if (numberOfColumns == newNumberOfColumns) { return; }
 
-    NSMutableArray *controllers = [NSMutableArray arrayWithArray:self.viewControllers];
+    NSMutableArray *controllers = [NSMutableArray arrayWithArray:self.visibleViewControllers];
 
     // Collapse columns down to the necessary number
     while (numberOfColumns > newNumberOfColumns && controllers.count > 1) {
@@ -594,7 +596,7 @@
 
         // Remove the controller we just merged / replaced
         [controllers removeObjectAtIndex:1];
-        _viewControllers = [NSArray arrayWithArray:controllers];
+        _visibleViewControllers = controllers;
 
         numberOfColumns--;
     }
@@ -605,22 +607,28 @@
         UIViewController *expandedViewController = nil;
 
         // If we're expanding the primary out into a detail
-//        if (numberOfColumns == 1) {
-//            if (_delegateFlags.expandPrimaryToDetail) {
-//                expandedViewController = [_delegate splitViewController:self expandDetailViewControllerFromPrimaryViewController:sourceViewController];
-//            }
-//        }
-//        else if (numberOfColumns == 2) {
-//            if (_delegateFlags.expandPrimaryToSecondary) {
-//                expandedViewController = [_delegate splitViewController:self expandSecondaryViewControllerFromPrimaryViewController:sourceViewController];
-//            }
-//
-//        }
+        if (numberOfColumns == 1) {
+            if (self.allViewControllers.count > 1) {
+                expandedViewController = self.allViewControllers.lastObject;
+            }
+
+            //if (_delegateFlags.expandPrimaryToDetail) {
+            //    expandedViewController = [_delegate splitViewController:self expandDetailViewControllerFromPrimaryViewController:sourceViewController];
+            //}
+        }
+        else if (numberOfColumns == 2) {
+            if (self.allViewControllers.count > 2) {
+                expandedViewController = self.allViewControllers[1];
+            }
+
+            //if (_delegateFlags.expandPrimaryToSecondary) {
+            //    expandedViewController = [_delegate splitViewController:self expandSecondaryViewControllerFromPrimaryViewController:sourceViewController];
+            //}
+        }
 
         // If the delegates failed, try to manually expand the controller if it's a navigation controller
-        if (expandedViewController == nil) {
-            expandedViewController = [self expandedViewControllerFromSourceViewController:sourceViewController];
-        }
+        //expandedViewController = [self expandedViewControllerFromSourceViewController:sourceViewController toDestinationController:expandedViewController];
+        [(UINavigationController *)expandedViewController toSplitViewController_restoreViewControllers];
 
         if (expandedViewController) {
             [controllers insertObject:expandedViewController atIndex:1];
@@ -628,13 +636,13 @@
         }
 
         numberOfColumns++;
-        _viewControllers = [NSArray arrayWithArray:controllers];
+        _visibleViewControllers = controllers;
     }
 }
 
 - (BOOL)replacePrimaryControllerWithController:(UIViewController *)viewController
 {
-    UIViewController *primaryViewController = self.viewControllers.firstObject;
+    UIViewController *primaryViewController = self.primaryViewController;
 
     // Skip if the new primary controller is actually the original (ie a navigation controller)
     if (viewController == primaryViewController) { return NO; }
@@ -655,14 +663,7 @@
 
     //Copy all view controllers to the primary navigation controller
     if ([sourceViewController isKindOfClass:[UINavigationController class]]) {
-        UINavigationController *sourceNavigationController = (UINavigationController *)sourceViewController;
-
-        NSArray *sourceViewControllers = sourceNavigationController.viewControllers;
-        sourceNavigationController.viewControllers = [NSArray array]; //Remove all view controllers from old navigation controller
-
-        for (UIViewController *controller in sourceViewControllers) {
-            [destNavigationController pushViewController:controller animated:NO];
-        }
+        [(UINavigationController *)sourceViewController toSplitViewController_moveViewControllersToNavigationController:destNavigationController];
     }
     else {
         [destNavigationController pushViewController:sourceViewController animated:NO];
@@ -671,7 +672,7 @@
     return YES;
 }
 
-- (UIViewController *)expandedViewControllerFromSourceViewController:(UIViewController *)sourceViewController
+- (UIViewController *)expandedViewControllerFromSourceViewController:(UIViewController *)sourceViewController toDestinationController:(UIViewController *)destinationController
 {
     // If a navigation controller, extract the last view controller from it and return it in a new navigation controller
     if ([sourceViewController isKindOfClass:[UINavigationController class]]) {
@@ -728,25 +729,39 @@
     _delegateFlags.expandPrimaryToSecondary = [_delegate respondsToSelector:@selector(splitViewController:primaryViewControllerForExpandingToType:)];
 }
 
+- (void)setViewControllers:(NSArray<UIViewController *> *)viewControllers
+{
+    if ([_allViewControllers isEqual:viewControllers]) { return; }
+
+    _allViewControllers = [viewControllers copy];
+
+    [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
+}
+
+- (NSArray<UIViewController *> *)viewControllers
+{
+    return [NSArray arrayWithArray:self.visibleViewControllers];
+}
+
 #pragma mark - Internal Accessors -
 - (UIViewController *)primaryViewController
 {
-    return self.viewControllers.firstObject;
+    return self.visibleViewControllers.firstObject;
 }
 
 - (UIViewController *)secondaryViewController
 {
-    if (self.viewControllers.count <= 2) { return nil; }
-    return self.viewControllers[1];
+    if (self.visibleViewControllers.count <= 2) { return nil; }
+    return self.visibleViewControllers[1];
 }
 
 - (UIViewController *)detailViewController
 {
-    if (self.viewControllers.count == 3) {
-        return self.viewControllers[2];
+    if (self.visibleViewControllers.count == 3) {
+        return self.visibleViewControllers[2];
     }
-    else if (self.viewControllers.count == 2) {
-        return self.viewControllers[1];
+    else if (self.visibleViewControllers.count == 2) {
+        return self.visibleViewControllers[1];
     }
 
     return nil;

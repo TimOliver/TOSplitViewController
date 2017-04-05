@@ -44,6 +44,14 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
 {
     NSArray *viewControllers = [self toSplitViewController_viewControllerStack];
     for (UIViewController *controller in viewControllers) {
+        // Remove this controller from the other controller
+        if (controller.navigationController) {
+            NSMutableArray *viewControllers = [controller.navigationController.viewControllers mutableCopy];
+            [viewControllers removeObject:controller];
+            [controller.navigationController setViewControllers:viewControllers animated:NO];
+        }
+
+        // Push it back to us
         [self pushViewController:controller animated:NO];
     }
 
