@@ -12,6 +12,7 @@
 		224719EB1E791A5D000886F9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 224719EA1E791A5D000886F9 /* AppDelegate.m */; };
 		224719F31E791A5D000886F9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 224719F21E791A5D000886F9 /* Assets.xcassets */; };
 		224719F61E791A5D000886F9 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 224719F41E791A5D000886F9 /* LaunchScreen.storyboard */; };
+		22BAE62F1E95EA1F00F487BD /* UIViewController+TOSplitViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 22BAE62E1E95EA1F00F487BD /* UIViewController+TOSplitViewController.m */; };
 		22DB97C81E7E7D4C007C516B /* ListTableViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 22DB97C71E7E7D4C007C516B /* ListTableViewController.m */; };
 		22DB97CB1E7E7D69007C516B /* DetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 22DB97CA1E7E7D69007C516B /* DetailViewController.m */; };
 		22F724681E94B17D00CE38A8 /* UINavigationController+TOSplitViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 22F724671E94B17D00CE38A8 /* UINavigationController+TOSplitViewController.m */; };
@@ -39,6 +40,8 @@
 		224719F21E791A5D000886F9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		224719F51E791A5D000886F9 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		224719F71E791A5D000886F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		22BAE62D1E95EA1F00F487BD /* UIViewController+TOSplitViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIViewController+TOSplitViewController.h"; sourceTree = "<group>"; };
+		22BAE62E1E95EA1F00F487BD /* UIViewController+TOSplitViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIViewController+TOSplitViewController.m"; sourceTree = "<group>"; };
 		22DB97C61E7E7D4C007C516B /* ListTableViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ListTableViewController.h; sourceTree = "<group>"; };
 		22DB97C71E7E7D4C007C516B /* ListTableViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ListTableViewController.m; sourceTree = "<group>"; };
 		22DB97C91E7E7D69007C516B /* DetailViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DetailViewController.h; sourceTree = "<group>"; };
@@ -129,6 +132,8 @@
 			children = (
 				22F724661E94B17D00CE38A8 /* UINavigationController+TOSplitViewController.h */,
 				22F724671E94B17D00CE38A8 /* UINavigationController+TOSplitViewController.m */,
+				22BAE62D1E95EA1F00F487BD /* UIViewController+TOSplitViewController.h */,
+				22BAE62E1E95EA1F00F487BD /* UIViewController+TOSplitViewController.m */,
 			);
 			path = Categories;
 			sourceTree = "<group>";
@@ -257,6 +262,7 @@
 				22DB97CB1E7E7D69007C516B /* DetailViewController.m in Sources */,
 				223D6A121E791D68000BE0D7 /* TOSplitViewController.m in Sources */,
 				224719EB1E791A5D000886F9 /* AppDelegate.m in Sources */,
+				22BAE62F1E95EA1F00F487BD /* UIViewController+TOSplitViewController.m in Sources */,
 				224719E81E791A5D000886F9 /* main.m in Sources */,
 				22DB97C81E7E7D4C007C516B /* ListTableViewController.m in Sources */,
 			);
@@ -467,6 +473,7 @@
 				22F724761E94C22200CE38A8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

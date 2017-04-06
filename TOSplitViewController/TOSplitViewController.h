@@ -10,6 +10,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+//NSNotificationName const TOSplitViewControllerShowDetailTargetDidChangeNotification;
+
 typedef NS_ENUM(NSInteger, TOSplitViewControllerType) {
     TOSplitViewControllerTypePrimary,  // The main view controller. Only this one is visible in compact-width views.
     TOSplitViewControllerTypeDetail,   // The widest controller, always shown in regular-width views, along the right hand side
@@ -29,20 +31,6 @@ showSecondaryViewController:(UIViewController *)vc
 - (BOOL)splitViewController:(TOSplitViewController *)splitViewController
    showDetailViewController:(UIViewController *)vc
                      sender:(nullable id)sender;
-
-//--
-- (nullable UIViewController *)primaryViewControllerForCollapsingSplitViewController:(TOSplitViewController *)splitViewController
-                                                         fromSecondaryViewController:(UIViewController *)secondaryViewController;
-
-- (nullable UIViewController *)primaryViewControllerForCollapsingSplitViewController:(TOSplitViewController *)splitViewController
-                                                         fromDetailViewController:(UIViewController *)detailViewController;
-
-- (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
-        expandSecondaryViewControllerFromPrimaryViewController:(UIViewController *)primaryViewController;
-
-- (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
-        expandDetailViewControllerFromPrimaryViewController:(UIViewController *)primaryViewController;
-//--
 
 - (BOOL)splitViewController:(TOSplitViewController *)splitViewController
      collapseViewController:(UIViewController *)auxiliaryViewController

@@ -8,6 +8,7 @@
 
 #import "UINavigationController+TOSplitViewController.h"
 #import <objc/runtime.h>
+#import "UIViewController+TOSplitViewController.h"
 
 static void *TOSplitViewControllerRootControllerKey;
 static void *TOSplitViewControllerViewControllersKey;
@@ -15,6 +16,8 @@ static void *TOSplitViewControllerViewControllersKey;
 const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
 
 @implementation UINavigationController (TOSplitViewController)
+
+#pragma mark - Public Interface -
 
 - (BOOL)toSplitViewController_moveViewControllersToNavigationController:(UINavigationController *)navigationController
 {
@@ -60,6 +63,8 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
     [self toSplitViewController_setRootViewController:nil];
 }
 
+#pragma mark - Property Management -
+
 - (void)toSplitViewController_setRootViewController:(UIViewController *)rootViewController
 {
     objc_setAssociatedObject(self, &TOSplitViewControllerRootControllerKey, rootViewController, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -95,6 +100,20 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
     }
 
     return viewControllers;
+}
+
+#pragma mark - Expand/Collapse Integration -
+- (void)collapseAuxiliaryViewController:(UIViewController *)secondaryViewController
+                                 ofType:(TOSplitViewControllerType)type
+                 forSplitViewController:(TOSplitViewController *)splitViewController
+{
+
+}
+
+- (nullable UIViewController *)separateAuxiliaryViewControllerOfType:(TOSplitViewControllerType)type
+                                              ForSplitViewController:(TOSplitViewController *)splitViewController
+{
+    return nil;
 }
 
 @end
