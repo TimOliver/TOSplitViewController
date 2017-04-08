@@ -75,6 +75,8 @@ showSecondaryViewController:(UIViewController *)vc
  */
 @property (nonatomic, copy) NSArray<UIViewController *> *viewControllers;
 
+@property (nonatomic, readonly) NSArray<UIViewController *> *visibleViewControllers;
+
 /**
  * The maximum number of columns this controller is allowed to show.
  * Default value is 3, and can only be decreased to 1.

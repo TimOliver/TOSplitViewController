@@ -21,7 +21,6 @@
 }
 
 // Child view controllers managed by the split view controller
-@property (nonatomic, strong) NSMutableArray *allViewControllers;
 @property (nonatomic, strong) NSMutableArray *visibleViewControllers;
 
 // Strong references to child controllers so if they are dismissed
@@ -47,7 +46,7 @@
 - (instancetype)initWithViewControllers:(NSArray<UIViewController *> *)viewControllers
 {
     if (self = [super init]) {
-        _allViewControllers = [viewControllers copy];
+        _viewControllers = viewControllers;
         [self setUp];
     }
 
@@ -81,7 +80,7 @@
     self.view.backgroundColor = [UIColor whiteColor];
 
     self.horizontalSizeClass = self.view.traitCollection.horizontalSizeClass;
-    self.visibleViewControllers = [NSMutableArray arrayWithArray:self.allViewControllers];
+    self.visibleViewControllers = [NSMutableArray arrayWithArray:self.viewControllers];
 
     //Add all of the view controllers
     for (UIViewController *controller in self.visibleViewControllers) {
@@ -362,6 +361,7 @@
     if (expandingSecondary) {
         [self.view insertSubview:primarySnapshot aboveSubview:newSecondary.view];
         newDetail.view.frame = detailFrame;
+        newSecondary.view.frame = primaryFrame;
         viewsForSeparators = @[newPrimary.view, newSecondary.view, newDetail.view];
     }
     else if (expandingPrimary) {
@@ -614,8 +614,8 @@
 
         // If we're expanding the primary out into a detail
         if (numberOfColumns == 1) {
-            if (self.allViewControllers.count > 1) {
-                expandedViewController = self.allViewControllers.lastObject;
+            if (self.viewControllers.count > 1) {
+                expandedViewController = self.viewControllers.lastObject;
             }
 
             //if (_delegateFlags.expandPrimaryToDetail) {
@@ -623,8 +623,8 @@
             //}
         }
         else if (numberOfColumns == 2) {
-            if (self.allViewControllers.count > 2) {
-                expandedViewController = self.allViewControllers[1];
+            if (self.viewControllers.count > 2) {
+                expandedViewController = self.viewControllers[1];
             }
 
             //if (_delegateFlags.expandPrimaryToSecondary) {
@@ -737,16 +737,9 @@
 
 - (void)setViewControllers:(NSArray<UIViewController *> *)viewControllers
 {
-    if ([_allViewControllers isEqual:viewControllers]) { return; }
-
-    _allViewControllers = [viewControllers copy];
-
+    if ([_viewControllers isEqual:viewControllers]) { return; }
+    _viewControllers = [viewControllers copy];
     [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
-}
-
-- (NSArray<UIViewController *> *)viewControllers
-{
-    return [NSArray arrayWithArray:self.visibleViewControllers];
 }
 
 #pragma mark - Internal Accessors -
