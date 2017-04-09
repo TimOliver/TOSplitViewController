@@ -8,7 +8,7 @@
 
 #import "UINavigationController+TOSplitViewController.h"
 #import <objc/runtime.h>
-#import "UIViewController+TOSplitViewController.h"
+#import "TOSplitViewController.h"
 
 static void *TOSplitViewControllerRootControllerKey;
 static void *TOSplitViewControllerViewControllersKey;
@@ -26,16 +26,18 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
     }
 
     // Save a strong reference to the root controller, so even if it is completely dismissed, it
-    // won't be released from memory
+    // won't be released from memory (and we can restore to it later)
     [self toSplitViewController_setRootViewController:self.viewControllers.firstObject];
 
-    // Save an internal reference to all view controllers weakly so they can be backtracked here
+    // Save an weak copy of all of the view controllers. If they get popped by the user,
+    // they'll be released from here too.
     [self toSplitViewController_setViewControllerStack:self.viewControllers];
 
-    // Pull out the view controllers, and push them onto the target controller
+    // Pull out the view controllers, and nil them out from this controller
     NSArray *controllers = [self.viewControllers copy];
     self.viewControllers = [NSArray array];
 
+    // Push them onto the target controller
     for (UIViewController *controller in controllers) {
         [navigationController pushViewController:controller animated:NO];
     }
@@ -45,9 +47,9 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
 
 - (void)toSplitViewController_restoreViewControllers
 {
+    // Loop through all the controllers we had saved and restore them.
     NSArray *viewControllers = [self toSplitViewController_viewControllerStack];
     for (UIViewController *controller in viewControllers) {
-        // Remove this controller from the other controller
         if (controller.navigationController) {
             NSMutableArray *viewControllers = [controller.navigationController.viewControllers mutableCopy];
             [viewControllers removeObject:controller];
@@ -58,7 +60,7 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
         [self pushViewController:controller animated:NO];
     }
 
-    // Flush out the internal properties
+    // Flush out the internal properties so there are no leaked references
     [self toSplitViewController_setViewControllerStack:nil];
     [self toSplitViewController_setRootViewController:nil];
 }
@@ -103,17 +105,35 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
 }
 
 #pragma mark - Expand/Collapse Integration -
-- (void)collapseAuxiliaryViewController:(UIViewController *)secondaryViewController
+- (void)collapseAuxiliaryViewController:(UIViewController *)auxiliaryViewController
                                  ofType:(TOSplitViewControllerType)type
                  forSplitViewController:(TOSplitViewController *)splitViewController
 {
+    // We can only work with 2 navigation view controllers
+    if (![auxiliaryViewController isKindOfClass:[UINavigationController class]]) {
+        return;
+    }
 
+    [(UINavigationController *)auxiliaryViewController toSplitViewController_moveViewControllersToNavigationController:self];
 }
 
 - (nullable UIViewController *)separateAuxiliaryViewControllerOfType:(TOSplitViewControllerType)type
-                                              ForSplitViewController:(TOSplitViewController *)splitViewController
+                                              forSplitViewController:(TOSplitViewController *)splitViewController
 {
-    return nil;
+    UIViewController *targetViewController = nil;
+    if (type == TOSplitViewControllerTypeDetail) { //expanding from 1 column to 2
+        targetViewController = splitViewController.detailViewController;
+    }
+    else if (type == TOSplitViewControllerTypeSecondary) { // expanding from 2 to 3 columns
+        targetViewController = splitViewController.secondaryViewController;
+    }
+
+    if (targetViewController || ![targetViewController isKindOfClass:[UINavigationController class]]) {
+        return nil;
+    }
+
+    [(UINavigationController *) targetViewController toSplitViewController_restoreViewControllers];
+    return targetViewController;
 }
 
 @end

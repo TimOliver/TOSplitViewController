@@ -23,18 +23,8 @@
 // Child view controllers managed by the split view controller
 @property (nonatomic, strong) NSMutableArray *visibleViewControllers;
 
-// Strong references to child controllers so if they are dismissed
-// while in compact mode, we can restore
-@property (nonatomic, strong) NSArray *secondaryChildControllers;
-@property (nonatomic, strong) NSArray *detailChildControllers;
-
 // The separator lines between view controllers
 @property (nonatomic, strong) NSArray<UIView *> *separatorViews;
-
-// The three view controllers, if visible. Returns nil otherwise
-@property (nonatomic, readonly) UIViewController *primaryViewController;
-@property (nonatomic, readonly) UIViewController *secondaryViewController;
-@property (nonatomic, readonly) UIViewController *detailViewController;
 
 // Manually track the horizontal size class that we will use to determine layouts
 @property (nonatomic, assign) UIUserInterfaceSizeClass horizontalSizeClass;
@@ -767,3 +757,27 @@
 }
 
 @end
+
+// ----------------------------------------------------------------------
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wincomplete-implementation"
+
+@implementation UIViewController (TOSplitViewController)
+
+- (TOSplitViewController *)to_splitViewController
+{
+    UIViewController *parent = self;
+    while ((parent = parent.parentViewController) != nil) {
+        if ([parent isKindOfClass:[TOSplitViewController class]]) {
+            return (TOSplitViewController *)parent;
+        }
+    }
+
+    return nil;
+}
+
+@end
+
+#pragma clang diagnostic pop
+
