@@ -217,6 +217,7 @@
     else if (collapsingDetail) {
         self.primaryViewController.view.frame = detailFrame;
         [self.view insertSubview:detailSnapshot aboveSubview:self.primaryViewController.view];
+        [self.view insertSubview:primarySnapshot aboveSubview:detailSnapshot];
 
         viewsForSeparators = @[primarySnapshot, self.primaryViewController.view];
     }
@@ -244,35 +245,45 @@
         UIViewController *detailViewController = self.detailViewController;
 
         // Cross fade the secondary snapshot over the new primary
+        // animate the snapshot
+        secondarySnapshot.frame = newPrimaryFrame;
+        secondarySnapshot.alpha = 0.0f;
+
+        detailSnapshot.alpha = 0.0f;
+
+        // This is a huge hack, but for some reason, an implicit animation is being
+        // added to the primary view controller that overrides what we're doing here.
+        // To undo it, we kill every animation already applied to the view controller,
+        // and reapply from scratch
+        [primaryViewController.view.layer removeAllAnimations];
+        [detailViewController.view.layer removeAllAnimations];
+
         if (collapsingSecondary) {
-            // animate the snapshot
-            secondarySnapshot.frame = newPrimaryFrame;
-            secondarySnapshot.alpha = 0.0f;
-
-            // animate the detail view controller
-            detailViewController.view.frame = newDetailFrame;
-
-            // This is a huge hack, but for some reason, an implicit animation is being
-            // added to the primary view controller that overrides what we're doing here.
-            // To undo it, we kill every animation already applied to the view controller,
-            // and reapply from scratch
-            [primaryViewController.view.layer removeAllAnimations];
-
             primaryViewController.view.frame = secondaryFrame;
-            [UIView animateWithDuration:context.transitionDuration
-                                  delay:0.0f
-                                options:UIViewAnimationOptionCurveEaseInOut
-                             animations:^{ primaryViewController.view.frame = newPrimaryFrame; }
-                             completion:nil];
+            detailViewController.view.frame = detailFrame;
+            detailSnapshot.frame = newDetailFrame;
         }
         else if (collapsingDetail) {
-            CGRect toFrame = (CGRect){CGPointZero, size};
-            primaryViewController.view.frame = toFrame;
-
-            // Animate the detail view crossfading to the new one
-            detailSnapshot.frame = toFrame;
-            detailSnapshot.alpha = 0.0f;
+            primaryViewController.view.frame = detailFrame;
+            detailSnapshot.frame = newPrimaryFrame;
         }
+
+        [UIView animateWithDuration:context.transitionDuration
+                              delay:0.0f
+                            options:UIViewAnimationOptionCurveEaseInOut
+                         animations:^{
+                             primaryViewController.view.frame = newPrimaryFrame;
+                             detailViewController.view.frame = newDetailFrame;
+                         }
+                         completion:nil];
+//        else if (collapsingDetail) {
+//            CGRect toFrame = (CGRect){CGPointZero, size};
+//            primaryViewController.view.frame = toFrame;
+//
+//            // Animate the detail view crossfading to the new one
+//            detailSnapshot.frame = toFrame;
+//            detailSnapshot.alpha = 0.0f;
+//        }
 
         [self layoutSeparatorViewsForViews:viewsForSeparators height:size.height];
     };
@@ -372,6 +383,7 @@
 
         [newPrimary.view.layer removeAllAnimations];
         [newSecondary.view.layer removeAllAnimations];
+        [newDetail.view.layer removeAllAnimations];
 
         newPrimary.view.frame = primaryOffFrame;
         newSecondary.view.frame = primaryFrame;
@@ -381,6 +393,7 @@
                          animations:^{
                              newPrimary.view.frame = newPrimaryFrame;
                              newSecondary.view.frame = newSecondaryFrame;
+                             newDetail.view.frame = newDetailFrame;
                              [self layoutSeparatorViewsForViews:viewsForSeparators height:size.height];
                          }
                          completion:^(BOOL completion) {
