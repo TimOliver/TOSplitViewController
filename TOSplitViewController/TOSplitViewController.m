@@ -447,19 +447,16 @@
         CGFloat idealSecondaryWidth = self.secondaryColumnMinimumWidth;
         CGFloat idealDetailWidth = self.detailColumnMinimumWidth;
 
-        CGFloat padding = 0.0f;
-        CGFloat delta = size.width - (idealPrimaryWidth + idealSecondaryWidth + idealDetailWidth);
-        if (delta > FLT_EPSILON) {
-            padding = floorf(delta / 3.0f);
-        }
+        // Work out the percentage width of each element
+        CGFloat totalWidth = idealPrimaryWidth + idealSecondaryWidth + idealDetailWidth;
 
         // Update the frames for each controller
         frame.size = size;
-        frame.size.width = idealPrimaryWidth + padding;
+        frame.size.width = ceilf((idealPrimaryWidth / totalWidth) * size.width);
         primaryController.view.frame = frame;
 
         frame.origin.x = CGRectGetMaxX(frame);
-        frame.size.width = idealSecondaryWidth + padding;
+        frame.size.width = ceilf((idealSecondaryWidth / totalWidth) * size.width);
         secondaryController.view.frame = frame;
 
         frame.origin.x = CGRectGetMaxX(frame);
