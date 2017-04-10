@@ -21,7 +21,7 @@
 }
 
 // Child view controllers managed by the split view controller
-@property (nonatomic, strong) NSMutableArray *visibleViewControllers;
+@property (nonatomic, strong, readwrite) NSMutableArray *visibleViewControllers;
 
 // The separator lines between view controllers
 @property (nonatomic, strong) NSArray<UIView *> *separatorViews;
@@ -276,14 +276,6 @@
                              detailViewController.view.frame = newDetailFrame;
                          }
                          completion:nil];
-//        else if (collapsingDetail) {
-//            CGRect toFrame = (CGRect){CGPointZero, size};
-//            primaryViewController.view.frame = toFrame;
-//
-//            // Animate the detail view crossfading to the new one
-//            detailSnapshot.frame = toFrame;
-//            detailSnapshot.alpha = 0.0f;
-//        }
 
         [self layoutSeparatorViewsForViews:viewsForSeparators height:size.height];
     };
@@ -568,133 +560,110 @@
 
     if (numberOfColumns == newNumberOfColumns) { return; }
 
-    NSMutableArray *controllers = [NSMutableArray arrayWithArray:self.visibleViewControllers];
-
     // Collapse columns down to the necessary number
-    while (numberOfColumns > newNumberOfColumns && controllers.count > 1) {
+    while (numberOfColumns > newNumberOfColumns && _visibleViewControllers.count > 1) {
         UIViewController *primaryViewController = self.primaryViewController;
-        UIViewController *auxiliaryViewController = controllers[1]; // Either the secondary or detail controller
+        UIViewController *auxiliaryViewController = _visibleViewControllers[1]; // Either the secondary or detail controller
 
-        // We're collapsing the secondary controller into the primary
-        UIViewController *newPrimaryController = nil;
-//        if (numberOfColumns == 3) {
-//            if (_delegateFlags.collapseSecondaryToPrimary) {
-//                newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
-//                                                                                fromSecondaryViewController:auxiliaryViewController];
-//            }
-//        }
-//        else if (numberOfColumns == 2) { // We're collapsing the detail controller into the primary
-//            if (_delegateFlags.collapseDetailToPrimary) {
-//                newPrimaryController = [self.delegate primaryViewControllerForCollapsingSplitViewController:self
-//                                                                                fromDetailViewController:auxiliaryViewController];
-//            }
-//        }
+        TOSplitViewControllerType type = (numberOfColumns == 3) ? TOSplitViewControllerTypeSecondary : TOSplitViewControllerTypeDetail;
 
-        // If there was a delegate that provided a user-specified view controller, override and replace
-        // the current primary controller
-        if (newPrimaryController) {
-            [self removeSplitViewControllerChildViewController:auxiliaryViewController];
-            if ([self replacePrimaryControllerWithController:newPrimaryController]) {
-                [controllers replaceObjectAtIndex:0 withObject:newPrimaryController];
-            }
+        // First, test if there is a delegate method to perform any custom collapsing operations
+        BOOL result = NO;
+        if (_delegateFlags.collapseAuxiliaryToPrimary) {
+            result = [self.delegate splitViewController:self
+                                 collapseViewController:auxiliaryViewController
+                                                 ofType:type
+                              ontoPrimaryViewController:primaryViewController];
         }
-        else { // otherwise default to a merge behaviour where the auxiliary controller will add its children to the primary nav controller
-            [self removeSplitViewControllerChildViewController:auxiliaryViewController];
-            [self mergeViewController:auxiliaryViewController intoViewController:primaryViewController];
+
+        // If there weren't, try and use the view controller's own collapse logic
+        if (result == NO && [primaryViewController respondsToSelector:@selector(collapseAuxiliaryViewController:ofType:forSplitViewController:)]) {
+            [primaryViewController collapseAuxiliaryViewController:auxiliaryViewController ofType:type forSplitViewController:self];
         }
+
+        // Give the user a chance
+        if (_delegateFlags.primaryForCollapsing) {
+            UIViewController *newPrimaryController = [self.delegate splitViewController:self primaryViewControllerForCollapsingFromType:type];
+            [self replaceChildViewController:primaryViewController withController:newPrimaryController];
+        }
+
+        // Finally, remove the collapsed controller from the stack
+        [self removeSplitViewControllerChildViewController:auxiliaryViewController];
 
         // Remove the controller we just merged / replaced
-        [controllers removeObjectAtIndex:1];
-        _visibleViewControllers = controllers;
+        [_visibleViewControllers removeObjectAtIndex:1];
 
         numberOfColumns--;
     }
 
     // Expand columns to the necessary number
-    while (numberOfColumns < newNumberOfColumns && controllers.count < 3) {
-        UIViewController *sourceViewController = controllers.firstObject;
+    while (numberOfColumns < newNumberOfColumns && _visibleViewControllers.count < 3) {
+        TOSplitViewControllerType type = (numberOfColumns == 2) ? TOSplitViewControllerTypeSecondary : TOSplitViewControllerTypeDetail;
+        UIViewController *primaryViewController = _visibleViewControllers.firstObject;
+
+        // Work out if there is a previous controller in this split controller that may get replaced
+        UIViewController *originalController = nil;
+        if (type == TOSplitViewControllerTypeDetail) {
+            originalController = _viewControllers.lastObject;
+        }
+        else {
+            originalController = _viewControllers[1];
+        }
+
+        // Restore the original controller for now
+        [_visibleViewControllers insertObject:originalController atIndex:1];
+        [self addSplitViewControllerChildViewController:originalController];
+
+        // Check if the user has provided custom expansion callbacks
         UIViewController *expandedViewController = nil;
-
-        // If we're expanding the primary out into a detail
-        if (numberOfColumns == 1) {
-            if (self.viewControllers.count > 1) {
-                expandedViewController = self.viewControllers.lastObject;
-            }
-
-            //if (_delegateFlags.expandPrimaryToDetail) {
-            //    expandedViewController = [_delegate splitViewController:self expandDetailViewControllerFromPrimaryViewController:sourceViewController];
-            //}
-        }
-        else if (numberOfColumns == 2) {
-            if (self.viewControllers.count > 2) {
-                expandedViewController = self.viewControllers[1];
-            }
-
-            //if (_delegateFlags.expandPrimaryToSecondary) {
-            //    expandedViewController = [_delegate splitViewController:self expandSecondaryViewControllerFromPrimaryViewController:sourceViewController];
-            //}
+        if (_delegateFlags.separateFromPrimary) {
+            expandedViewController = [self.delegate splitViewController:self
+                                           separateViewControllerOfType:type
+                                              fromPrimaryViewController:primaryViewController];
         }
 
-        // If the delegates failed, try to manually expand the controller if it's a navigation controller
-        //expandedViewController = [self expandedViewControllerFromSourceViewController:sourceViewController toDestinationController:expandedViewController];
-        [(UINavigationController *)expandedViewController toSplitViewController_restoreViewControllers];
+        // If not, default back the view controller logic
+        if (expandedViewController == nil && [primaryViewController respondsToSelector:@selector(separateAuxiliaryViewControllerOfType:forSplitViewController:)]) {
+            expandedViewController = [primaryViewController separateAuxiliaryViewControllerOfType:type forSplitViewController:self];
+        }
 
+        // If we did get a new controller, replace the original controller with it
         if (expandedViewController) {
-            [controllers insertObject:expandedViewController atIndex:1];
-            [self addSplitViewControllerChildViewController:expandedViewController];
+            [self replaceChildViewController:originalController withController:expandedViewController];
+        }
+
+        // Finally, customize the primary controller if needed
+        if (_delegateFlags.expandPrimaryToSecondary) {
+            UIViewController *newPrimary = [self.delegate splitViewController:self primaryViewControllerForExpandingToType:type];
+            [self replaceChildViewController:primaryViewController withController:newPrimary];
         }
 
         numberOfColumns++;
-        _visibleViewControllers = controllers;
     }
 }
 
-- (BOOL)replacePrimaryControllerWithController:(UIViewController *)viewController
+- (BOOL)replaceChildViewController:(UIViewController *)originalController withController:(UIViewController *)newController
 {
-    UIViewController *primaryViewController = self.primaryViewController;
-
     // Skip if the new primary controller is actually the original (ie a navigation controller)
-    if (viewController == primaryViewController) { return NO; }
+    if (originalController == newController) { return NO; }
 
     // Remove the original view controller and add the new one
-    [self removeSplitViewControllerChildViewController:primaryViewController];
-    [self addSplitViewControllerChildViewController:viewController];
+    [self removeSplitViewControllerChildViewController:originalController];
+    [self addSplitViewControllerChildViewController:newController];
 
-    return YES;
-}
-
-- (BOOL)mergeViewController:(UIViewController *)sourceViewController intoViewController:(UIViewController *)destViewController
-{
-    // If the dest is a navigation controller, we can push to it, else just let the source get destroyed
-    if (![destViewController isKindOfClass:[UINavigationController class]]) { return NO; }
-
-    UINavigationController *destNavigationController = (UINavigationController *)destViewController;
-
-    //Copy all view controllers to the primary navigation controller
-    if ([sourceViewController isKindOfClass:[UINavigationController class]]) {
-        [(UINavigationController *)sourceViewController toSplitViewController_moveViewControllersToNavigationController:destNavigationController];
+    NSUInteger index = [_visibleViewControllers indexOfObject:originalController];
+    if (index != NSNotFound) {
+        [_visibleViewControllers replaceObjectAtIndex:index withObject:newController];
     }
-    else {
-        [destNavigationController pushViewController:sourceViewController animated:NO];
+
+    index = [_viewControllers indexOfObject:originalController];
+    if (index != NSNotFound) {
+        NSMutableArray *viewControllers = [self.viewControllers mutableCopy];
+        [viewControllers replaceObjectAtIndex:index withObject:newController];
+         _viewControllers = [NSArray arrayWithArray:viewControllers];
     }
 
     return YES;
-}
-
-- (UIViewController *)expandedViewControllerFromSourceViewController:(UIViewController *)sourceViewController toDestinationController:(UIViewController *)destinationController
-{
-    // If a navigation controller, extract the last view controller from it and return it in a new navigation controller
-    if ([sourceViewController isKindOfClass:[UINavigationController class]]) {
-        UINavigationController *navigationController = (UINavigationController *)sourceViewController;
-        if (navigationController.viewControllers.count < 2) {
-            return nil;
-        }
-
-        UIViewController *lastViewController = [(UINavigationController *)sourceViewController popViewControllerAnimated:NO];
-        return [[UINavigationController alloc] initWithRootViewController:lastViewController];
-    }
-
-    return nil;
 }
 
 #pragma mark - Column State Checking -

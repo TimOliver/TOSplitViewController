@@ -128,7 +128,7 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
         targetViewController = splitViewController.secondaryViewController;
     }
 
-    if (targetViewController || ![targetViewController isKindOfClass:[UINavigationController class]]) {
+    if (!targetViewController || ![targetViewController isKindOfClass:[UINavigationController class]]) {
         return nil;
     }
 
