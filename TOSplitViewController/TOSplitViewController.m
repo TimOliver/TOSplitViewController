@@ -646,6 +646,7 @@
 {
     // Skip if the new primary controller is actually the original (ie a navigation controller)
     if (originalController == newController) { return NO; }
+    if (newController == nil) { return NO; }
 
     // Remove the original view controller and add the new one
     [self removeSplitViewControllerChildViewController:originalController];
