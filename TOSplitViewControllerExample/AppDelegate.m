@@ -11,7 +11,7 @@
 #import "ListTableViewController.h"
 #import "DetailViewController.h"
 
-@interface AppDelegate ()
+@interface AppDelegate () <TOSplitViewControllerDelegate>
 
 @end
 
@@ -35,11 +35,41 @@
 
     NSArray *controllers = @[primaryNavController, secondaryNavController, detailNavController];
     TOSplitViewController *splitViewController = [[TOSplitViewController alloc] initWithViewControllers:controllers];
+    splitViewController.delegate = self;
 
     self.window.rootViewController = splitViewController;
     [self.window makeKeyAndVisible];
 
     return YES;
+}
+
+#pragma mark - Delegate -
+
+- (BOOL)splitViewController:(TOSplitViewController *)splitViewController
+     collapseViewController:(UIViewController *)auxiliaryViewController
+                     ofType:(TOSplitViewControllerType)controllerType
+  ontoPrimaryViewController:(UIViewController *)primaryViewController;
+{
+    return NO;
+}
+
+- (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
+                      separateViewControllerOfType:(TOSplitViewControllerType)type
+                         fromPrimaryViewController:(UIViewController *)primaryViewController
+{
+    return nil;
+}
+
+- (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
+        primaryViewControllerForCollapsingFromType:(TOSplitViewControllerType)type
+{
+    return nil;
+}
+
+- (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
+           primaryViewControllerForExpandingToType:(TOSplitViewControllerType)type
+{
+    return nil;
 }
 
 @end
