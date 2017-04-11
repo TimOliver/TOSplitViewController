@@ -18,6 +18,8 @@
         BOOL primaryForCollapsing;
         BOOL expandPrimaryToSecondary;
     } _delegateFlags;
+
+    NSMutableArray *_viewControllers;
 }
 
 // Child view controllers managed by the split view controller
@@ -36,7 +38,7 @@
 - (instancetype)initWithViewControllers:(NSArray<UIViewController *> *)viewControllers
 {
     if (self = [super init]) {
-        _viewControllers = viewControllers;
+        _viewControllers = [viewControllers mutableCopy];
         [self setUp];
     }
 
@@ -656,15 +658,11 @@
 
     index = [_viewControllers indexOfObject:originalController];
     if (index != NSNotFound) {
-        NSMutableArray *viewControllers = [self.viewControllers mutableCopy];
-        [viewControllers replaceObjectAtIndex:index withObject:newController];
-         _viewControllers = [NSArray arrayWithArray:viewControllers];
+        [_viewControllers replaceObjectAtIndex:index withObject:newController];
     }
 
     return YES;
 }
-
-#pragma mark - Column State Checking -
 
 - (NSInteger)possibleNumberOfColumnsForWidth:(CGFloat)width
 {
@@ -691,6 +689,33 @@
     return MIN(self.maximumNumberOfColumns, numberOfColumns);
 }
 
+#pragma mark - View Controller Navigation -
+- (void)showSecondaryViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+{
+    if (viewController == nil) {
+        [_viewControllers removeObject:self.secondaryViewController];
+        [_visibleViewControllers removeObject:self.secondaryViewController];
+    }
+    else if (self.secondaryViewController && viewController != nil) {
+        [self replaceChildViewController:self.secondaryViewController withController:viewController];
+    }
+
+    [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
+}
+
+- (void)showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+{
+    if (viewController == nil) {
+        [_viewControllers removeObject:self.detailViewController];
+        [_visibleViewControllers removeObject:self.detailViewController];
+    }
+    else if (self.detailViewController && viewController != nil) {
+        [self replaceChildViewController:self.detailViewController withController:viewController];
+    }
+
+    [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
+}
+
 #pragma mark - Accessors -
 - (void)setDelegate:(id<TOSplitViewControllerDelegate>)delegate
 {
@@ -708,8 +733,13 @@
 - (void)setViewControllers:(NSArray<UIViewController *> *)viewControllers
 {
     if ([_viewControllers isEqual:viewControllers]) { return; }
-    _viewControllers = [viewControllers copy];
+    _viewControllers = [viewControllers mutableCopy];
     [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
+}
+
+- (NSArray<UIViewController *> *)viewControllers
+{
+    return [NSArray arrayWithArray:_viewControllers];
 }
 
 #pragma mark - Internal Accessors -

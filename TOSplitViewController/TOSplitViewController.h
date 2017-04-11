@@ -178,9 +178,9 @@ showSecondaryViewController:(UIViewController *)vc
 
 - (instancetype)initWithViewControllers:(NSArray<UIViewController *> *)viewControllers;
 
-- (void)showSecondaryViewController:(UIViewController *)controller sender:(id)sender;
+- (void)showSecondaryViewController:(nullable UIViewController *)viewController sender:(nullable id)sender;
 
-- (void)showDetailViewController:(UIViewController *)vc sender:(nullable id)sender;
+- (void)showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender;
 
 @end
 
