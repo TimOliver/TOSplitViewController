@@ -38,21 +38,21 @@
         XCTAssert(secondaryNavigationController.viewControllers.count == 3);
 
         // Move all the controllers to the primary navigation controller
-        [secondaryNavigationController toSplitViewController_moveViewControllersToNavigationController:primaryNavigationController];
+        [secondaryNavigationController toSplitViewController_moveViewControllersToNavigationController:primaryNavigationController animated:NO];
 
         // Confirm the primary has 6 controllers, and the secondary has 0
         XCTAssert(primaryNavigationController.viewControllers.count == 6);
         XCTAssert(secondaryNavigationController.viewControllers.count == 0);
 
         // Move them back
-        [secondaryNavigationController toSplitViewController_restoreViewControllers];
+        [secondaryNavigationController toSplitViewController_restoreViewControllersAnimated:NO];
 
         // Confirm the controllers are in parity again
         XCTAssert(primaryNavigationController.viewControllers.count == 3);
         XCTAssert(secondaryNavigationController.viewControllers.count == 3);
 
         // Move the controllers across, and then dismiss all controllers from the secondary controller
-        [secondaryNavigationController toSplitViewController_moveViewControllersToNavigationController:primaryNavigationController];
+        [secondaryNavigationController toSplitViewController_moveViewControllersToNavigationController:primaryNavigationController animated:NO];
 
         for (NSInteger i = 0; i < 3; i++) {
             [primaryNavigationController popViewControllerAnimated:NO];
@@ -63,7 +63,7 @@
     XCTAssert(primaryNavigationController.viewControllers.count == 3);
 
     // Now attempt to restore the second controller
-    [secondaryNavigationController toSplitViewController_restoreViewControllers];
+    [secondaryNavigationController toSplitViewController_restoreViewControllersAnimated:NO];
 
     // We should have gotten the root controller of the secondary controller back
     XCTAssert(secondaryNavigationController.viewControllers.count == 1);

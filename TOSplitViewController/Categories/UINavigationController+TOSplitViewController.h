@@ -10,7 +10,7 @@
 
 @interface UINavigationController (TOSplitViewController)
 
-- (BOOL)toSplitViewController_moveViewControllersToNavigationController:(UINavigationController *)navigationController;
-- (void)toSplitViewController_restoreViewControllers;
+- (BOOL)toSplitViewController_moveViewControllersToNavigationController:(UINavigationController *)navigationController animated:(BOOL)animated;
+- (void)toSplitViewController_restoreViewControllersAnimated:(BOOL)animated;
 
 @end

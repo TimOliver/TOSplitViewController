@@ -622,11 +622,11 @@
         }
 
         // If not, default back the view controller logic
-        if (expandedViewController == nil && [primaryViewController respondsToSelector:@selector(separateAuxiliaryViewControllerOfType:forSplitViewController:)]) {
-            expandedViewController = [primaryViewController separateAuxiliaryViewControllerOfType:type forSplitViewController:self];
+        if (expandedViewController == nil && [primaryViewController respondsToSelector:@selector(separateAuxiliaryViewController:ofType:forSplitViewController:)]) {
+            expandedViewController = [primaryViewController separateAuxiliaryViewController:originalController ofType:type forSplitViewController:self];
         }
 
-        // If we did get a new controller, replace the original controller with it
+        // If we did get a new controller, replace/merge the original controller with it
         if (expandedViewController) {
             [self replaceChildViewController:originalController withController:expandedViewController];
         }
@@ -689,31 +689,28 @@
     return MIN(self.maximumNumberOfColumns, numberOfColumns);
 }
 
-#pragma mark - View Controller Navigation -
-- (void)showSecondaryViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+#pragma mark - View Controller Presentation/Navigation -
+- (void)to_showViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
 {
-    if (viewController == nil) {
-        [_viewControllers removeObject:self.secondaryViewController];
-        [_visibleViewControllers removeObject:self.secondaryViewController];
-    }
-    else if (self.secondaryViewController && viewController != nil) {
-        [self replaceChildViewController:self.secondaryViewController withController:viewController];
-    }
-
-    [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
+    NSLog(@"Called");
 }
 
-- (void)showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+- (void)to_showSecondaryViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
 {
-    if (viewController == nil) {
-        [_viewControllers removeObject:self.detailViewController];
-        [_visibleViewControllers removeObject:self.detailViewController];
-    }
-    else if (self.detailViewController && viewController != nil) {
-        [self replaceChildViewController:self.detailViewController withController:viewController];
-    }
+    NSLog(@"Called");
+}
 
-    [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
+- (void)to_showSecondaryViewController:(nullable UIViewController *)secondaryViewController
+              withDetailViewController:(nullable UIViewController *)detailViewController
+                                sender:(nullable id)sender
+{
+    NSLog(@"Called");
+}
+
+
+- (void)to_showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+{
+    NSLog(@"Called");
 }
 
 #pragma mark - Accessors -
@@ -785,6 +782,42 @@
     }
 
     return nil;
+}
+
+- (void)to_showViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+{
+    UIViewController *targetViewController = [self targetViewControllerForAction:@selector(to_showViewController:sender:) sender:sender];
+    if (targetViewController) {
+        [targetViewController to_showViewController:viewController sender:sender];
+    }
+}
+
+
+- (void)to_showSecondaryViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+{
+    UIViewController *targetViewController = [self targetViewControllerForAction:@selector(to_showSecondaryViewController:sender:) sender:sender];
+    if (targetViewController) {
+        [targetViewController to_showSecondaryViewController:viewController sender:sender];
+    }
+}
+
+
+- (void)to_showSecondaryViewController:(nullable UIViewController *)secondaryViewController
+              withDetailViewController:(nullable UIViewController *)detailViewController
+                                sender:(nullable id)sender
+{
+    UIViewController *targetViewController = [self targetViewControllerForAction:@selector(to_showSecondaryViewController:withDetailViewController:sender:) sender:sender];
+    if (targetViewController) {
+        [targetViewController to_showSecondaryViewController:secondaryViewController withDetailViewController:detailViewController sender:sender];
+    }
+}
+
+- (void)to_showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+{
+    UIViewController *targetViewController = [self targetViewControllerForAction:@selector(to_showDetailViewController:sender:) sender:sender];
+    if (targetViewController) {
+        [targetViewController to_showDetailViewController:viewController sender:sender];
+    }
 }
 
 @end

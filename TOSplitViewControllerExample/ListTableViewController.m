@@ -7,6 +7,7 @@
 //
 
 #import "ListTableViewController.h"
+#import "TOSplitViewController.h"
 
 @interface ListTableViewController ()
 
@@ -56,6 +57,11 @@
     cell.textLabel.text = [NSString stringWithFormat:@"Cell %ld", (long)indexPath.row];
 
     return cell;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
 @end

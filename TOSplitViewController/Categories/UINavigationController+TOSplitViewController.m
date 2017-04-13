@@ -19,7 +19,7 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
 
 #pragma mark - Public Interface -
 
-- (BOOL)toSplitViewController_moveViewControllersToNavigationController:(UINavigationController *)navigationController
+- (BOOL)toSplitViewController_moveViewControllersToNavigationController:(UINavigationController *)navigationController animated:(BOOL)animated
 {
     if (self.viewControllers.count == 0) {
         return YES;
@@ -39,16 +39,29 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
 
     // Push them onto the target controller
     for (UIViewController *controller in controllers) {
-        [navigationController pushViewController:controller animated:NO];
+        [navigationController pushViewController:controller animated:animated];
     }
 
     return YES;
 }
 
-- (void)toSplitViewController_restoreViewControllers
+- (void)toSplitViewController_restoreViewControllersAnimated:(BOOL)animated
 {
     // Loop through all the controllers we had saved and restore them.
-    NSArray *viewControllers = [self toSplitViewController_viewControllerStack];
+    NSMutableArray *viewControllers = [self toSplitViewController_viewControllerStack];
+
+    // Check to see if any of our controllers are still in that navigation controller (or if the user popped all of them)
+    // If there were still unpopped controllers, and then additional controllers were added, we'll 'inherit' those ones
+    // as children of this view controller
+    UIViewController *lastViewController = viewControllers.lastObject;
+    UINavigationController *navigationController = lastViewController.navigationController;
+    if (navigationController != nil) {
+        NSUInteger index = [navigationController.viewControllers indexOfObject:lastViewController];
+        NSRange range = NSMakeRange(index + 1, navigationController.viewControllers.count - (index+1));
+        NSArray *trailingViewControllers = [navigationController.viewControllers subarrayWithRange:range];
+        [viewControllers addObjectsFromArray:trailingViewControllers];
+    }
+
     for (UIViewController *controller in viewControllers) {
         if (controller.navigationController) {
             NSMutableArray *viewControllers = [controller.navigationController.viewControllers mutableCopy];
@@ -57,7 +70,7 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
         }
 
         // Push it back to us
-        [self pushViewController:controller animated:NO];
+        [self pushViewController:controller animated:animated];
     }
 
     // Flush out the internal properties so there are no leaked references
@@ -92,7 +105,7 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
     objc_setAssociatedObject(self, &TOSplitViewControllerViewControllersKey, pointerArray, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (nullable NSArray *)toSplitViewController_viewControllerStack
+- (nullable NSMutableArray *)toSplitViewController_viewControllerStack
 {
     NSPointerArray *pointerArray = objc_getAssociatedObject(self, &TOSplitViewControllerViewControllersKey);
     NSMutableArray *viewControllers = [NSMutableArray array];
@@ -114,26 +127,26 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
         return;
     }
 
-    [(UINavigationController *)auxiliaryViewController toSplitViewController_moveViewControllersToNavigationController:self];
+    [(UINavigationController *)auxiliaryViewController toSplitViewController_moveViewControllersToNavigationController:self animated:YES];
 }
 
-- (nullable UIViewController *)separateAuxiliaryViewControllerOfType:(TOSplitViewControllerType)type
-                                              forSplitViewController:(TOSplitViewController *)splitViewController
+- (nullable UIViewController *)separateAuxiliaryViewController:(UIViewController *)auxiliaryViewController
+                                                        ofType:(TOSplitViewControllerType)type
+                                        forSplitViewController:(TOSplitViewController *)splitViewController
 {
-    UIViewController *targetViewController = nil;
-    if (type == TOSplitViewControllerTypeDetail) { //expanding from 1 column to 2
-        targetViewController = splitViewController.detailViewController;
-    }
-    else if (type == TOSplitViewControllerTypeSecondary) { // expanding from 2 to 3 columns
-        targetViewController = splitViewController.secondaryViewController;
-    }
-
-    if (!targetViewController || ![targetViewController isKindOfClass:[UINavigationController class]]) {
+    if (![auxiliaryViewController isKindOfClass:[UINavigationController class]]) {
         return nil;
     }
 
-    [(UINavigationController *) targetViewController toSplitViewController_restoreViewControllers];
-    return targetViewController;
+    [(UINavigationController *)auxiliaryViewController toSplitViewController_restoreViewControllersAnimated:NO];
+    return auxiliaryViewController;
+}
+
+#pragma mark - Presentation Integration -
+- (void)to_showViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+{
+    if (viewController == nil) { return; }
+    [self showViewController:viewController sender:sender];
 }
 
 @end

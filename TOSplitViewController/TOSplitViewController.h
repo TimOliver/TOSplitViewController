@@ -33,8 +33,39 @@ typedef NS_ENUM(NSInteger, TOSplitViewControllerType) {
                                  ofType:(TOSplitViewControllerType)type
                  forSplitViewController:(TOSplitViewController *)splitViewController;
 
-- (nullable UIViewController *)separateAuxiliaryViewControllerOfType:(TOSplitViewControllerType)type
+- (nullable UIViewController *)separateAuxiliaryViewController:(UIViewController *)auxiliaryViewController
+                                                        ofType:(TOSplitViewControllerType)type
                                               forSplitViewController:(TOSplitViewController *)splitViewController;
+
+/*
+ Finds the first view controller in the hierarchy that can handle this (usually a navigation controller),
+ and then calls it to present the new controller.
+ */
+- (void)to_showViewController:(nullable UIViewController *)viewController sender:(nullable id)sender;
+
+/*
+ Presents `viewController` as the new secondary view controller. If another secondary view controller was
+ already set, this will completely remove that view controller from the stack. If the secondary controller
+ is currently collapsed into the primary controller, this will then collapse the secondary controller into the primary.
+ */
+- (void)to_showSecondaryViewController:(nullable UIViewController *)viewController sender:(nullable id)sender;
+
+/*
+ Presents `secondaryViewController` as the new secondary view controller, just like `showSecondaryController:sender`.
+ It will also replace the current detail view controller with the one specified, but will not transition to it.
+ This is so full-screen presentations can display a 'default' view controller in the detail column before the user
+ has started focussing on it.
+ */
+- (void)to_showSecondaryViewController:(nullable UIViewController *)secondaryViewController
+           withDetailViewController:(nullable UIViewController *)detailViewController
+                             sender:(nullable id)sender;
+
+/*
+ Presents `viewController` as the new detail view controller. If another secondary view controller was
+ already set, this will completely remove that view controller from the stack. If the secondary controller
+ is currently collapsed into the primary controller, this will then collapse the secondary controller into the primary.
+ */
+- (void)to_showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender;
 
 @end
 
@@ -177,10 +208,6 @@ showSecondaryViewController:(UIViewController *)vc
 @property (nonatomic, assign) CGFloat separatorStatusBarClipWidth;
 
 - (instancetype)initWithViewControllers:(NSArray<UIViewController *> *)viewControllers;
-
-- (void)showSecondaryViewController:(nullable UIViewController *)viewController sender:(nullable id)sender;
-
-- (void)showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender;
 
 @end
 
