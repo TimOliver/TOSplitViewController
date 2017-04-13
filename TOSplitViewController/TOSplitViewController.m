@@ -692,25 +692,124 @@
 #pragma mark - View Controller Presentation/Navigation -
 - (void)to_showViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
 {
-    NSLog(@"Called");
+    [self showViewController:viewController sender:sender];
 }
 
 - (void)to_showSecondaryViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
 {
-    NSLog(@"Called");
+    NSInteger numberOfVisibleColumns = self.visibleViewControllers.count;
+
+    // Check if we already have a secondary controller that needs to be extracted
+    if (self.viewControllers.count == 3) {
+        UIViewController *secondaryController = self.viewControllers[1];
+        [self extractFromPrimaryAuxiliaryViewController:secondaryController ofType:TOSplitViewControllerTypeSecondary];
+    }
+
+    // If we set an empty value, cancel out here
+    if (viewController == nil) {
+        if (_visibleViewControllers.count != numberOfVisibleColumns) {
+            [self layoutViewControllersForBoundsSize:self.view.bounds.size];
+        }
+
+        return;
+    }
+
+    // Insert the new controller
+    [_viewControllers insertObject:viewController atIndex:1];
+
+    // If it was originally visible, make the new one visible
+    if (numberOfVisibleColumns != _visibleViewControllers.count) {
+        [self addSplitViewControllerChildViewController:viewController];
+        [_visibleViewControllers insertObject:viewController atIndex:1];
+        [self layoutViewControllersForBoundsSize:self.view.bounds.size];
+        return;
+    }
+
+    // Otherwise perform the logic to collapse these controllers into the primary
+    [self mergeWithPrimaryAuxiliaryViewController:viewController ofType:TOSplitViewControllerTypeSecondary];
+}
+
+- (void)to_showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+{
+    [self showDetailViewController:viewController collapse:YES sender:sender];
+}
+
+- (void)showDetailViewController:(nullable UIViewController *)viewController collapse:(BOOL)collapse sender:(nullable id)sender
+{
+    NSInteger numberOfVisibleColumns = self.visibleViewControllers.count;
+
+    // Check if we already have a detail controller that needs to be extracted
+    if (self.viewControllers.count > 1) {
+        UIViewController *detailController = self.viewControllers.lastObject;
+        [self extractFromPrimaryAuxiliaryViewController:detailController ofType:TOSplitViewControllerTypeDetail];
+    }
+
+    // If we set an empty value, cancel out here
+    if (viewController == nil) {
+        if (_visibleViewControllers.count != numberOfVisibleColumns) {
+            [self layoutViewControllersForBoundsSize:self.view.bounds.size];
+        }
+
+        return;
+    }
+
+    // Insert the new controller
+    [_viewControllers addObject:viewController];
+
+    // If it was originally visible, make the new one visible
+    if (numberOfVisibleColumns != _visibleViewControllers.count) {
+        [self addSplitViewControllerChildViewController:viewController];
+        [_visibleViewControllers addObject:viewController];
+        [self layoutViewControllersForBoundsSize:self.view.bounds.size];
+        return;
+    }
+
+    // Otherwise perform the logic to collapse these controllers into the primary
+    if (collapse) {
+        [self mergeWithPrimaryAuxiliaryViewController:viewController ofType:TOSplitViewControllerTypeDetail];
+    }
 }
 
 - (void)to_showSecondaryViewController:(nullable UIViewController *)secondaryViewController
               withDetailViewController:(nullable UIViewController *)detailViewController
                                 sender:(nullable id)sender
 {
-    NSLog(@"Called");
+    [self to_showSecondaryViewController:secondaryViewController sender:sender];
+    [self showDetailViewController:detailViewController collapse:NO sender:sender];
 }
 
-
-- (void)to_showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+- (void)mergeWithPrimaryAuxiliaryViewController:(UIViewController *)viewController ofType:(TOSplitViewControllerType)type
 {
-    NSLog(@"Called");
+    BOOL success = NO;
+    if (_delegateFlags.collapseAuxiliaryToPrimary) {
+        success = [self.delegate splitViewController:self collapseViewController:viewController ofType:type ontoPrimaryViewController:self.primaryViewController];
+    }
+
+    if (!success && [self.primaryViewController respondsToSelector:@selector(collapseAuxiliaryViewController:ofType:forSplitViewController:)]) {
+        [self.primaryViewController collapseAuxiliaryViewController:viewController ofType:type forSplitViewController:self];
+    }
+}
+
+- (void)extractFromPrimaryAuxiliaryViewController:(UIViewController *)viewController ofType:(TOSplitViewControllerType)type
+{
+    // If it's not visible, it's collapsed with the primary. Separate it from the primary first
+    if ([self.visibleViewControllers indexOfObject:viewController] == NSNotFound) {
+        UIViewController *controller = nil;
+        if (_delegateFlags.separateFromPrimary) {
+            controller = [self.delegate splitViewController:self separateViewControllerOfType:type fromPrimaryViewController:self.primaryViewController];
+        }
+
+        if (controller == nil) {
+            if ([self.primaryViewController respondsToSelector:@selector(separateAuxiliaryViewController:ofType:forSplitViewController:)]) {
+                controller = [self.primaryViewController separateAuxiliaryViewController:viewController ofType:type forSplitViewController:self];
+            }
+        }
+    }
+
+    // Strip it out of the split view controller
+    [self removeSplitViewControllerChildViewController:viewController];
+    [_visibleViewControllers removeObject:viewController];
+    [_viewControllers removeObject:viewController];
 }
 
 #pragma mark - Accessors -
@@ -766,6 +865,8 @@
 @end
 
 // ----------------------------------------------------------------------
+
+#pragma mark - UViewController Category -
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wincomplete-implementation"

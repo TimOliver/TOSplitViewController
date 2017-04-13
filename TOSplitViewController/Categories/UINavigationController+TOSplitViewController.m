@@ -49,6 +49,7 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
 {
     // Loop through all the controllers we had saved and restore them.
     NSMutableArray *viewControllers = [self toSplitViewController_viewControllerStack];
+    if (viewControllers.count == 0) { return; }
 
     // Check to see if any of our controllers are still in that navigation controller (or if the user popped all of them)
     // If there were still unpopped controllers, and then additional controllers were added, we'll 'inherit' those ones
