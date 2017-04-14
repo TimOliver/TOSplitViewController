@@ -8,7 +8,8 @@
 
 #import "AppDelegate.h"
 #import "TOSplitViewController.h"
-#import "ListTableViewController.h"
+#import "PrimaryViewController.h"
+#import "SecondaryViewController.h"
 #import "DetailViewController.h"
 
 @interface AppDelegate () <TOSplitViewControllerDelegate>
@@ -21,11 +22,11 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
 
-    ListTableViewController *mainController = [[ListTableViewController alloc] init];
+    PrimaryViewController *mainController = [[PrimaryViewController alloc] initWithStyle:UITableViewStyleGrouped];
     mainController.title = @"Primary";
     UINavigationController *primaryNavController = [[UINavigationController alloc] initWithRootViewController:mainController];
 
-    ListTableViewController *secondaryController = [[ListTableViewController alloc] init];
+    SecondaryViewController *secondaryController = [[SecondaryViewController alloc] init];
     secondaryController.title = @"Secondary";
     UINavigationController *secondaryNavController = [[UINavigationController alloc] initWithRootViewController:secondaryController];
 

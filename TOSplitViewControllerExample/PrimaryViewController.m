@@ -1,23 +1,23 @@
 //
-//  ListTableViewController.m
+//  PrimaryViewController.m
 //  TOSplitViewControllerExample
 //
-//  Created by Tim Oliver on 3/19/17.
+//  Created by Tim Oliver on 4/13/17.
 //  Copyright © 2017 Tim Oliver. All rights reserved.
 //
 
-#import "ListTableViewController.h"
+#import "PrimaryViewController.h"
 #import "TOSplitViewController.h"
 
-@interface ListTableViewController ()
+@interface PrimaryViewController ()
 
 @end
 
-@implementation ListTableViewController
+@implementation PrimaryViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-
+    
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
     
@@ -30,12 +30,6 @@
     // Dispose of any resources that can be recreated.
 }
 
-- (void)viewWillAppear:(BOOL)animated
-{
-    [super viewWillAppear:animated];
-    self.navigationController.toolbarHidden = NO;
-}
-
 #pragma mark - Table view data source
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -43,26 +37,35 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return 20;
+    return 2;
 }
 
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    static NSString *cellIdentifier = @"Cell";
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
-    if (cell == nil ) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentifier];
+    static NSString *identifier = @"Cell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+    if (cell == nil) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier];
     }
 
-    cell.textLabel.text = [NSString stringWithFormat:@"Cell %ld", (long)indexPath.row];
+    if (indexPath.row == 0) {
+        cell.textLabel.text = @"Three Columns";
+    }
+    else {
+        cell.textLabel.text = @"Two Columns";
+    }
 
     return cell;
 }
 
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    [tableView deselectRowAtIndexPath:indexPath animated:YES];
-    [self to_showSecondaryViewController:nil sender:self];
+    UIViewController *test = [[UIViewController alloc] init];
+    test.view.backgroundColor = [UIColor redColor];
+    [self to_showSecondaryViewController:[[UINavigationController alloc] initWithRootViewController:test] sender:self];
+
+
 }
 
 @end

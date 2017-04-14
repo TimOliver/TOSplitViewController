@@ -577,7 +577,9 @@
 
         // If there weren't, try and use the view controller's own collapse logic
         if (result == NO && [primaryViewController respondsToSelector:@selector(collapseAuxiliaryViewController:ofType:forSplitViewController:)]) {
-            [primaryViewController collapseAuxiliaryViewController:auxiliaryViewController ofType:type forSplitViewController:self];
+            [UIView performWithoutAnimation:^{
+                [primaryViewController collapseAuxiliaryViewController:auxiliaryViewController ofType:type forSplitViewController:self];
+            }];
         }
 
         // Give the user a chance
@@ -614,7 +616,7 @@
         [self addSplitViewControllerChildViewController:originalController];
 
         // Check if the user has provided custom expansion callbacks
-        UIViewController *expandedViewController = nil;
+        __block UIViewController *expandedViewController = nil;
         if (_delegateFlags.separateFromPrimary) {
             expandedViewController = [self.delegate splitViewController:self
                                            separateViewControllerOfType:type
@@ -623,7 +625,9 @@
 
         // If not, default back the view controller logic
         if (expandedViewController == nil && [primaryViewController respondsToSelector:@selector(separateAuxiliaryViewController:ofType:forSplitViewController:)]) {
-            expandedViewController = [primaryViewController separateAuxiliaryViewController:originalController ofType:type forSplitViewController:self];
+            [UIView performWithoutAnimation:^{
+                expandedViewController = [primaryViewController separateAuxiliaryViewController:originalController ofType:type forSplitViewController:self];
+            }];
         }
 
         // If we did get a new controller, replace/merge the original controller with it

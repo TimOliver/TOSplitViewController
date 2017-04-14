@@ -128,7 +128,7 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
         return;
     }
 
-    [(UINavigationController *)auxiliaryViewController toSplitViewController_moveViewControllersToNavigationController:self animated:YES];
+    [(UINavigationController *)auxiliaryViewController toSplitViewController_moveViewControllersToNavigationController:self animated:NO];
 }
 
 - (nullable UIViewController *)separateAuxiliaryViewController:(UIViewController *)auxiliaryViewController
