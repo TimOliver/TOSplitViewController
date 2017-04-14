@@ -1,10 +1,24 @@
 //
 //  TOSplitViewController.m
-//  TOSplitViewControllerExample
 //
-//  Created by Tim Oliver on 3/14/17.
-//  Copyright © 2017 Tim Oliver. All rights reserved.
+//  Copyright 2017 Timothy Oliver. All rights reserved.
 //
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to
+//  deal in the Software without restriction, including without limitation the
+//  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+//  sell copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in
+//  all copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+//  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+//  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+//  IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #import "TOSplitViewController.h"
 #import "UINavigationController+TOSplitViewController.h"
@@ -556,6 +570,7 @@
 {
     NSInteger numberOfColumns    = self.visibleViewControllers.count;
     NSInteger newNumberOfColumns = [self possibleNumberOfColumnsForWidth:size.width];
+    newNumberOfColumns = MIN(newNumberOfColumns, self.viewControllers.count);
 
     if (numberOfColumns == newNumberOfColumns) { return; }
 
@@ -572,14 +587,13 @@
             result = [self.delegate splitViewController:self
                                  collapseViewController:auxiliaryViewController
                                                  ofType:type
-                              ontoPrimaryViewController:primaryViewController];
+                              ontoPrimaryViewController:primaryViewController
+                      shouldAnimate:NO];
         }
 
         // If there weren't, try and use the view controller's own collapse logic
-        if (result == NO && [primaryViewController respondsToSelector:@selector(collapseAuxiliaryViewController:ofType:forSplitViewController:)]) {
-            [UIView performWithoutAnimation:^{
-                [primaryViewController collapseAuxiliaryViewController:auxiliaryViewController ofType:type forSplitViewController:self];
-            }];
+        if (result == NO && [primaryViewController respondsToSelector:@selector(collapseAuxiliaryViewController:ofType:forSplitViewController:shouldAnimate:)]) {
+            [primaryViewController collapseAuxiliaryViewController:auxiliaryViewController ofType:type forSplitViewController:self shouldAnimate:NO];
         }
 
         // Give the user a chance
@@ -624,10 +638,8 @@
         }
 
         // If not, default back the view controller logic
-        if (expandedViewController == nil && [primaryViewController respondsToSelector:@selector(separateAuxiliaryViewController:ofType:forSplitViewController:)]) {
-            [UIView performWithoutAnimation:^{
-                expandedViewController = [primaryViewController separateAuxiliaryViewController:originalController ofType:type forSplitViewController:self];
-            }];
+        if (expandedViewController == nil && [primaryViewController respondsToSelector:@selector(separateAuxiliaryViewController:ofType:forSplitViewController:shouldAnimate:)]) {
+            expandedViewController = [primaryViewController separateAuxiliaryViewController:originalController ofType:type forSplitViewController:self shouldAnimate:NO];
         }
 
         // If we did get a new controller, replace/merge the original controller with it
@@ -689,8 +701,6 @@
         numberOfColumns = 2;
     }
 
-    numberOfColumns = MIN(numberOfColumns, self.viewControllers.count);
-
     // Default to 1 column
     return MIN(self.maximumNumberOfColumns, numberOfColumns);
 }
@@ -723,10 +733,11 @@
     // Insert the new controller
     [_viewControllers insertObject:viewController atIndex:1];
 
-    // If it was originally visible, make the new one visible
-    if (numberOfVisibleColumns != _visibleViewControllers.count) {
-        [self addSplitViewControllerChildViewController:viewController];
+    // Check if we have enough space to display it
+    NSInteger possibleColumsnCount = [self possibleNumberOfColumnsForWidth:self.view.bounds.size.width];
+    if (possibleColumsnCount > self.visibleViewControllers.count) {
         [_visibleViewControllers insertObject:viewController atIndex:1];
+        [self addSplitViewControllerChildViewController:viewController];
         [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
         return;
     }
@@ -762,10 +773,11 @@
     // Insert the new controller
     [_viewControllers addObject:viewController];
 
-    // If it was originally visible, make the new one visible
-    if (numberOfVisibleColumns != _visibleViewControllers.count) {
-        [self addSplitViewControllerChildViewController:viewController];
+    // Check if we have enough space to display it
+    NSInteger possibleColumsnCount = [self possibleNumberOfColumnsForWidth:self.view.bounds.size.width];
+    if (possibleColumsnCount > self.visibleViewControllers.count) {
         [_visibleViewControllers addObject:viewController];
+        [self addSplitViewControllerChildViewController:viewController];
         [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
         return;
     }
@@ -788,11 +800,11 @@
 {
     BOOL success = NO;
     if (_delegateFlags.collapseAuxiliaryToPrimary) {
-        success = [self.delegate splitViewController:self collapseViewController:viewController ofType:type ontoPrimaryViewController:self.primaryViewController];
+        success = [self.delegate splitViewController:self collapseViewController:viewController ofType:type ontoPrimaryViewController:self.primaryViewController shouldAnimate:YES];
     }
 
-    if (!success && [self.primaryViewController respondsToSelector:@selector(collapseAuxiliaryViewController:ofType:forSplitViewController:)]) {
-        [self.primaryViewController collapseAuxiliaryViewController:viewController ofType:type forSplitViewController:self];
+    if (!success && [self.primaryViewController respondsToSelector:@selector(collapseAuxiliaryViewController:ofType:forSplitViewController:shouldAnimate:)]) {
+        [self.primaryViewController collapseAuxiliaryViewController:viewController ofType:type forSplitViewController:self shouldAnimate:YES];
     }
 }
 
@@ -806,8 +818,8 @@
         }
 
         if (controller == nil) {
-            if ([self.primaryViewController respondsToSelector:@selector(separateAuxiliaryViewController:ofType:forSplitViewController:)]) {
-                controller = [self.primaryViewController separateAuxiliaryViewController:viewController ofType:type forSplitViewController:self];
+            if ([self.primaryViewController respondsToSelector:@selector(separateAuxiliaryViewController:ofType:forSplitViewController:shouldAnimate:)]) {
+                controller = [self.primaryViewController separateAuxiliaryViewController:viewController ofType:type forSplitViewController:self shouldAnimate:YES];
             }
         }
     }
@@ -826,7 +838,7 @@
 
     _delegateFlags.showSecondaryViewController = [_delegate respondsToSelector:@selector(splitViewController:showSecondaryViewController:sender:)];
     _delegateFlags.showDetailViewController = [_delegate respondsToSelector:@selector(splitViewController:showDetailViewController:sender:)];
-    _delegateFlags.collapseAuxiliaryToPrimary = [_delegate respondsToSelector:@selector(splitViewController:collapseViewController:ofType:ontoPrimaryViewController:)];
+    _delegateFlags.collapseAuxiliaryToPrimary = [_delegate respondsToSelector:@selector(splitViewController:collapseViewController:ofType:ontoPrimaryViewController:shouldAnimate:)];
     _delegateFlags.separateFromPrimary = [_delegate respondsToSelector:@selector(splitViewController:separateViewControllerOfType:fromPrimaryViewController:)];
     _delegateFlags.primaryForCollapsing = [_delegate respondsToSelector:@selector(splitViewController:primaryViewControllerForCollapsingFromType:)];
     _delegateFlags.expandPrimaryToSecondary = [_delegate respondsToSelector:@selector(splitViewController:primaryViewControllerForExpandingToType:)];

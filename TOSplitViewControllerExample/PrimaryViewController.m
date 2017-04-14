@@ -8,22 +8,13 @@
 
 #import "PrimaryViewController.h"
 #import "TOSplitViewController.h"
+#import "SecondaryViewController.h"
 
 @interface PrimaryViewController ()
 
 @end
 
 @implementation PrimaryViewController
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    
-    // Uncomment the following line to preserve selection between presentations.
-    // self.clearsSelectionOnViewWillAppear = NO;
-    
-    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
-}
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
@@ -61,11 +52,13 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    UIViewController *test = [[UIViewController alloc] init];
-    test.view.backgroundColor = [UIColor redColor];
-    [self to_showSecondaryViewController:[[UINavigationController alloc] initWithRootViewController:test] sender:self];
-
-
+    if (indexPath.row == 0) {
+        [self to_showSecondaryViewController:nil sender:self];
+    }
+    else {
+        SecondaryViewController *secondary = [[SecondaryViewController alloc] init];
+        [self to_showSecondaryViewController:[[UINavigationController alloc] initWithRootViewController:secondary] sender:self];
+    }
 }
 
 @end
