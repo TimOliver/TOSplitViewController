@@ -685,6 +685,8 @@
         numberOfColumns = 2;
     }
 
+    numberOfColumns = MIN(numberOfColumns, self.viewControllers.count);
+
     // Default to 1 column
     return MIN(self.maximumNumberOfColumns, numberOfColumns);
 }
@@ -708,7 +710,7 @@
     // If we set an empty value, cancel out here
     if (viewController == nil) {
         if (_visibleViewControllers.count != numberOfVisibleColumns) {
-            [self layoutViewControllersForBoundsSize:self.view.bounds.size];
+            [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
         }
 
         return;
@@ -721,7 +723,7 @@
     if (numberOfVisibleColumns != _visibleViewControllers.count) {
         [self addSplitViewControllerChildViewController:viewController];
         [_visibleViewControllers insertObject:viewController atIndex:1];
-        [self layoutViewControllersForBoundsSize:self.view.bounds.size];
+        [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
         return;
     }
 
@@ -747,7 +749,7 @@
     // If we set an empty value, cancel out here
     if (viewController == nil) {
         if (_visibleViewControllers.count != numberOfVisibleColumns) {
-            [self layoutViewControllersForBoundsSize:self.view.bounds.size];
+            [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
         }
 
         return;
@@ -760,7 +762,7 @@
     if (numberOfVisibleColumns != _visibleViewControllers.count) {
         [self addSplitViewControllerChildViewController:viewController];
         [_visibleViewControllers addObject:viewController];
-        [self layoutViewControllersForBoundsSize:self.view.bounds.size];
+        [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
         return;
     }
 
