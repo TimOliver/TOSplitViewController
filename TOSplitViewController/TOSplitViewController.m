@@ -799,10 +799,6 @@
 - (void)mergeWithPrimaryAuxiliaryViewController:(UIViewController *)viewController ofType:(TOSplitViewControllerType)type
 {
     BOOL success = NO;
-    if (_delegateFlags.collapseAuxiliaryToPrimary) {
-        success = [self.delegate splitViewController:self collapseViewController:viewController ofType:type ontoPrimaryViewController:self.primaryViewController shouldAnimate:YES];
-    }
-
     if (!success && [self.primaryViewController respondsToSelector:@selector(collapseAuxiliaryViewController:ofType:forSplitViewController:shouldAnimate:)]) {
         [self.primaryViewController collapseAuxiliaryViewController:viewController ofType:type forSplitViewController:self shouldAnimate:YES];
     }

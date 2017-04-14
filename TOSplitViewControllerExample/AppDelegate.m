@@ -49,9 +49,10 @@
 - (BOOL)splitViewController:(TOSplitViewController *)splitViewController
      collapseViewController:(UIViewController *)auxiliaryViewController
                      ofType:(TOSplitViewControllerType)controllerType
-  ontoPrimaryViewController:(UIViewController *)primaryViewController;
+  ontoPrimaryViewController:(UIViewController *)primaryViewController
+              shouldAnimate:(BOOL)animate
 {
-    return NO;
+    return YES;
 }
 
 - (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
