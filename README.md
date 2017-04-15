@@ -63,10 +63,10 @@ It's still very much in its infancy, and the complexity required to managed 3 co
 
 # Credits
 
-`TOSplitViewController` was developed by [Tim Oliver](http://twitter.com/TimOliverAU)
+`TOSplitViewController` was developed by [Tim Oliver](http://twitter.com/TimOliverAU).
 
-iPad Air 2 perspective mockup by [Pixeden](http://pixeden.com)
+iPad Air 2 perspective mockup by [Pixeden](http://pixeden.com).
 
 # License
 
-`TOSplitViewController` is available under the MIT license. Please see the [LICENSE](LICENSE) file for more information
+`TOSplitViewController` is available under the MIT license. Please see the [LICENSE](LICENSE) file for more information.
