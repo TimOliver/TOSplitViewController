@@ -9,6 +9,7 @@
 #import "PrimaryViewController.h"
 #import "TOSplitViewController.h"
 #import "SecondaryViewController.h"
+#import "DetailViewController.h"
 
 @interface PrimaryViewController ()
 
@@ -16,19 +17,30 @@
 
 @implementation PrimaryViewController
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.title = @"Primary";
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    NSLog(@"Primary will appear");
 }
 
 #pragma mark - Table view data source
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 1;
+    return 2;
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
+{
+    return section == 0 ? @"THREE COLUMNS" : @"TWO COLUMNS";
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return 2;
+    return 5;
 }
 
 
@@ -39,12 +51,7 @@
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier];
     }
 
-    if (indexPath.row == 0) {
-        cell.textLabel.text = @"Three Columns";
-    }
-    else {
-        cell.textLabel.text = @"Two Columns";
-    }
+    cell.textLabel.text = [NSString stringWithFormat:@"Cell %ld", (long)indexPath.row+1];
 
     return cell;
 }
@@ -52,10 +59,14 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    if (indexPath.row == 0) {
+    // Two columns
+    if (indexPath.section == 1) {
         [self to_showSecondaryViewController:nil sender:self];
+
+        DetailViewController *controller = [[DetailViewController alloc] init];
+        [self to_showDetailViewController:[[UINavigationController alloc] initWithRootViewController:controller] sender:self];
     }
-    else {
+    else { // Three columns
         SecondaryViewController *secondary = [[SecondaryViewController alloc] init];
         [self to_showSecondaryViewController:[[UINavigationController alloc] initWithRootViewController:secondary] sender:self];
     }

@@ -16,6 +16,12 @@
 
 @implementation DetailViewController
 
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    NSLog(@"Detail will appear");
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor whiteColor];
@@ -30,6 +36,8 @@
 
     [self.label sizeToFit];
     self.label.center = self.view.center;
+
+    self.title = @"Detail";
 }
 
 @end
