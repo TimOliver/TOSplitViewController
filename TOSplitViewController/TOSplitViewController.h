@@ -24,15 +24,24 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+#pragma mark - Constants -
+
 @class TOSplitViewController;
 
-//NSNotificationName const TOSplitViewControllerShowDetailTargetDidChangeNotification;
+/* An NSNotification that is triggered each time a split view controller performs a presentation action
+ * that some child controller objects may need in order to update their UI states.
+ */
+extern NSNotificationName const TOSplitViewControllerShowTargetDidChangeNotification;
 
 typedef NS_ENUM(NSInteger, TOSplitViewControllerType) {
     TOSplitViewControllerTypePrimary,  // The main view controller. Only this one is visible in compact-width views.
     TOSplitViewControllerTypeDetail,   // The widest controller, always shown in regular-width views, along the right hand side
     TOSplitViewControllerTypeSecondary // The most optional controller. Only shown in between the primary and detail controllers when there's enough horizontal space.
 };
+
+/*******************************************************************************************************************/
+
+#pragma mark - UIViewController Integration -
 
 /**
  * A category for `UIViewController` that exposes the functionality of `TOSplitViewController` to
@@ -41,8 +50,10 @@ typedef NS_ENUM(NSInteger, TOSplitViewControllerType) {
 
 @interface UIViewController (TOSplitViewController)
 
+/* Returns the parent `TOSplitViewController` instance of this controller if it belongs to one. */
 @property (nonatomic, nullable, readonly) TOSplitViewController *to_splitViewController;
 
+/*  */
 - (void)collapseAuxiliaryViewController:(UIViewController *)auxiliaryViewController
                                  ofType:(TOSplitViewControllerType)type
                  forSplitViewController:(TOSplitViewController *)splitViewController
@@ -85,6 +96,10 @@ typedef NS_ENUM(NSInteger, TOSplitViewControllerType) {
 
 @end
 
+/*******************************************************************************************************************/
+
+#pragma mark - TOSplitViewController Delegate -
+
 /**
  * A delegate protocol to allow an object to custom handle the transition and presentation of 
  * the child view controllers.
@@ -94,31 +109,71 @@ typedef NS_ENUM(NSInteger, TOSplitViewControllerType) {
 
 @optional
 
+/* Gives the delegate the ability to completely override the default presentation behavior when a 
+ * child calls 'showSecondaryViewController'.
+ *
+ * Return YES if the delegate completely handled the presentation. Return NO for the split view 
+ * controller to handle the presentation as normal.
+ */
 - (BOOL)splitViewController:(TOSplitViewController *)splitViewController
-showSecondaryViewController:(UIViewController *)vc
+showSecondaryViewController:(UIViewController *)viewController
                      sender:(nullable id)sender;
 
+/* Gives the delegate the ability to completely override the default presentation behavior when a
+ * child calls 'showDetailViewController'.
+ *
+ * Return YES if the delegate completely handled the presentation. Return NO for the split view
+ * controller to handle the presentation as normal.
+ */
 - (BOOL)splitViewController:(TOSplitViewController *)splitViewController
-   showDetailViewController:(UIViewController *)vc
+   showDetailViewController:(UIViewController *)viewController
                      sender:(nullable id)sender;
 
+/* When an auxiliary controller (ie detail or secondary) is collapsing onto the primary controller,
+ * this method lets the delegate take complete responsibility for the collapsing behaviour.
+ * 
+ * Return YES to indicate the delegate handled the collapse, or NO if the split view controller should
+ * handle it.
+ */
 - (BOOL)splitViewController:(TOSplitViewController *)splitViewController
      collapseViewController:(UIViewController *)auxiliaryViewController
                      ofType:(TOSplitViewControllerType)controllerType
   ontoPrimaryViewController:(UIViewController *)primaryViewController
               shouldAnimate:(BOOL)animate;
 
+/* When an auxiliary controller (ie detail or secondary) is expanding out from the primary controller,
+ * this method gives the delegate the chance to manually perform this separation logic.
+ *
+ * Return the view controller that will be the new auxiliary controller. Return `nil` to default to
+ * the split view controller's functionality.
+ */
 - (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
                       separateViewControllerOfType:(TOSplitViewControllerType)type
                          fromPrimaryViewController:(UIViewController *)primaryViewController;
 
+/*
+ * When an auxiliary controller is collapsing, this gives the delegate to override and provide a completely
+ * new view controller to serve as the primary controller.
+ *
+ * Return the view controller that will become the new primary controller, or `nil` to disregard.
+ */
 - (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
         primaryViewControllerForCollapsingFromType:(TOSplitViewControllerType)type;
 
+/*
+ * When an auxiliary controller is expanding, this gives the delegate to override and provide a completely
+ * new view controller to serve as the primary controller.
+ *
+ * Return the view controller that will become the new primary controller, or `nil` to disregard.
+ */
 - (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
            primaryViewControllerForExpandingToType:(TOSplitViewControllerType)type;
 
 @end
+
+/*******************************************************************************************************************/
+
+#pragma mark - TOSplitViewController -
 
 /**
  * A container view controller that may display up to 3 view controller in columns along a horizontal layout.
@@ -224,6 +279,10 @@ showSecondaryViewController:(UIViewController *)vc
  */
 @property (nonatomic, assign) CGFloat separatorStatusBarClipWidth;
 
+/**
+ * Create a new split view controller instance. Provide the view controllers, in order
+ * from left to right.
+ */
 - (instancetype)initWithViewControllers:(NSArray<UIViewController *> *)viewControllers;
 
 @end

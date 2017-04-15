@@ -23,6 +23,9 @@
 #import "TOSplitViewController.h"
 #import "UINavigationController+TOSplitViewController.h"
 
+NSNotificationName const TOSplitViewControllerShowDetailTargetDidChangeNotification
+                            = @"TOSplitViewControllerShowDetailTargetDidChangeNotification";
+
 @interface TOSplitViewController () {
     struct {
         BOOL showSecondaryViewController;
@@ -713,8 +716,14 @@
 
 - (void)to_showSecondaryViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
 {
-    NSInteger numberOfVisibleColumns = self.visibleViewControllers.count;
+    // Let the delegate completely override this
+    if (_delegateFlags.showSecondaryViewController) {
+        if ([self.delegate splitViewController:self showSecondaryViewController:viewController sender:sender]) {
+            return;
+        }
+    }
 
+    NSInteger numberOfVisibleColumns = self.visibleViewControllers.count;
     // Check if we already have a secondary controller that needs to be extracted
     if (self.viewControllers.count == 3) {
         UIViewController *secondaryController = self.viewControllers[1];
@@ -753,6 +762,13 @@
 
 - (void)showDetailViewController:(nullable UIViewController *)viewController collapse:(BOOL)collapse sender:(nullable id)sender
 {
+    // Let the delegate completely override this
+    if (_delegateFlags.showDetailViewController) {
+        if ([self.delegate splitViewController:self showDetailViewController:viewController sender:sender]) {
+            return;
+        }
+    }
+
     NSInteger numberOfVisibleColumns = self.visibleViewControllers.count;
 
     // Check if we already have a detail controller that needs to be extracted
