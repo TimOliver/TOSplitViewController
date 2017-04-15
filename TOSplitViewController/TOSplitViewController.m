@@ -23,8 +23,11 @@
 #import "TOSplitViewController.h"
 #import "UINavigationController+TOSplitViewController.h"
 
-NSNotificationName const TOSplitViewControllerShowDetailTargetDidChangeNotification
+NSNotificationName const TOSplitViewControllerShowTargetDidChangeNotification
                             = @"TOSplitViewControllerShowDetailTargetDidChangeNotification";
+
+NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
+                                @"TOSplitViewControllerNotificationSplitViewControllerKey";
 
 @interface TOSplitViewController () {
     struct {
@@ -709,9 +712,16 @@ NSNotificationName const TOSplitViewControllerShowDetailTargetDidChangeNotificat
 }
 
 #pragma mark - View Controller Presentation/Navigation -
+- (void)postShowNewViewControllerNotification
+{
+    NSDictionary *userInfo = @{TOSplitViewControllerNotificationSplitViewControllerKey : self};
+    [[NSNotificationCenter defaultCenter] postNotificationName:TOSplitViewControllerShowTargetDidChangeNotification object:self userInfo:userInfo];
+}
+
 - (void)to_showViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
 {
     [self showViewController:viewController sender:sender];
+    [self postShowNewViewControllerNotification];
 }
 
 - (void)to_showSecondaryViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
@@ -719,6 +729,7 @@ NSNotificationName const TOSplitViewControllerShowDetailTargetDidChangeNotificat
     // Let the delegate completely override this
     if (_delegateFlags.showSecondaryViewController) {
         if ([self.delegate splitViewController:self showSecondaryViewController:viewController sender:sender]) {
+            [self postShowNewViewControllerNotification];
             return;
         }
     }
@@ -736,6 +747,8 @@ NSNotificationName const TOSplitViewControllerShowDetailTargetDidChangeNotificat
             [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
         }
 
+        [self postShowNewViewControllerNotification];
+
         return;
     }
 
@@ -748,11 +761,13 @@ NSNotificationName const TOSplitViewControllerShowDetailTargetDidChangeNotificat
         [_visibleViewControllers insertObject:viewController atIndex:1];
         [self addSplitViewControllerChildViewController:viewController];
         [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
+        [self postShowNewViewControllerNotification];
         return;
     }
 
     // Otherwise perform the logic to collapse these controllers into the primary
     [self mergeWithPrimaryAuxiliaryViewController:viewController ofType:TOSplitViewControllerTypeSecondary];
+    [self postShowNewViewControllerNotification];
 }
 
 - (void)to_showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
@@ -765,6 +780,7 @@ NSNotificationName const TOSplitViewControllerShowDetailTargetDidChangeNotificat
     // Let the delegate completely override this
     if (_delegateFlags.showDetailViewController) {
         if ([self.delegate splitViewController:self showDetailViewController:viewController sender:sender]) {
+            [self postShowNewViewControllerNotification];
             return;
         }
     }
@@ -783,6 +799,8 @@ NSNotificationName const TOSplitViewControllerShowDetailTargetDidChangeNotificat
             [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
         }
 
+        [self postShowNewViewControllerNotification];
+
         return;
     }
 
@@ -795,12 +813,14 @@ NSNotificationName const TOSplitViewControllerShowDetailTargetDidChangeNotificat
         [_visibleViewControllers addObject:viewController];
         [self addSplitViewControllerChildViewController:viewController];
         [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
+        [self postShowNewViewControllerNotification];
         return;
     }
 
     // Otherwise perform the logic to collapse these controllers into the primary
     if (collapse) {
         [self mergeWithPrimaryAuxiliaryViewController:viewController ofType:TOSplitViewControllerTypeDetail];
+        [self postShowNewViewControllerNotification];
     }
 }
 

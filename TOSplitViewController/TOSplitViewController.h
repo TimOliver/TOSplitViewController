@@ -32,6 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
  * that some child controller objects may need in order to update their UI states.
  */
 extern NSNotificationName const TOSplitViewControllerShowTargetDidChangeNotification;
+extern NSString * const TOSplitViewControllerNotificationSplitViewControllerKey;
 
 typedef NS_ENUM(NSInteger, TOSplitViewControllerType) {
     TOSplitViewControllerTypePrimary,  // The main view controller. Only this one is visible in compact-width views.
