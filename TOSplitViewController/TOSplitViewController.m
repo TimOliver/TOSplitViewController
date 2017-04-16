@@ -59,13 +59,31 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 {
     if (self = [super init]) {
         _viewControllers = [viewControllers mutableCopy];
-        [self setUp];
+        [self _setUp];
     }
 
     return self;
 }
 
-- (void)setUp
+- (instancetype)init
+{
+    if (self = [super init]) {
+        [self _setUp];
+    }
+
+    return self;
+}
+
+- (instancetype)initWithCoder:(NSCoder *)aDecoder
+{
+    if (self = [super initWithCoder:aDecoder]) {
+        [self _setUp];
+    }
+
+    return self;
+}
+
+- (void)_setUp
 {
     // Primary Column
     _primaryColumnMinimumWidth = 264.0f;
@@ -112,6 +130,7 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 - (void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:animated];
+    self.horizontalSizeClass = self.view.traitCollection.horizontalSizeClass;
     [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
 }
 
@@ -689,7 +708,7 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 - (NSInteger)possibleNumberOfColumnsForWidth:(CGFloat)width
 {
     // Not a regular side class (eg, iPhone / iPad Split View)
-    if (self.horizontalSizeClass != UIUserInterfaceSizeClassRegular) {
+    if (self.horizontalSizeClass == UIUserInterfaceSizeClassCompact) {
         return 1;
     }
 
@@ -879,8 +898,13 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 - (void)setViewControllers:(NSArray<UIViewController *> *)viewControllers
 {
     if ([_viewControllers isEqual:viewControllers]) { return; }
+
     _viewControllers = [viewControllers mutableCopy];
-    [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
+    _visibleViewControllers = [viewControllers mutableCopy];
+
+    if (self.isBeingPresented) {
+        [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
+    }
 }
 
 - (NSArray<UIViewController *> *)viewControllers
