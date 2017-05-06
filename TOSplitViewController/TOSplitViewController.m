@@ -399,6 +399,7 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
         viewsForSeparators = @[newPrimary.view, newSecondary.view, newDetail.view];
     }
     else if (expandingPrimary) {
+        newPrimary.view.frame = primaryOffFrame;
         newDetail.view.frame = primaryFrame;
         detailSnapshot.frame = primaryFrame;
         [self.view insertSubview:detailSnapshot aboveSubview:newDetail.view];
@@ -414,12 +415,19 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
         detailSnapshot.frame = newDetailFrame;
         detailSnapshot.alpha = 0.0f;
 
-        [newPrimary.view.layer removeAllAnimations];
-        [newSecondary.view.layer removeAllAnimations];
-        [newDetail.view.layer removeAllAnimations];
+        [self removeAllAnimationsInLayer:newPrimary.view.layer];
+        [self removeAllAnimationsInLayer:newSecondary.view.layer];
+        [self removeAllAnimationsInLayer:newDetail.view.layer];
 
         newPrimary.view.frame = primaryOffFrame;
+        [self layoutAllSubViewsInView:newPrimary.view];
+
         newSecondary.view.frame = primaryFrame;
+        [self layoutAllSubViewsInView:newSecondary.view];
+
+        newDetail.view.frame = primaryFrame;
+        [self layoutAllSubViewsInView:newDetail.view];
+
         [UIView animateWithDuration:context.transitionDuration
                               delay:0.0f
                             options:UIViewAnimationOptionCurveEaseInOut
@@ -432,8 +440,6 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
                          completion:^(BOOL completion) {
                              [self.view sendSubviewToBack:newPrimary.view];
                          }];
-
-        newDetail.view.frame = newDetailFrame;
     };
 
     id completionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
@@ -445,6 +451,25 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     [coordinator animateAlongsideTransition:transitionBlock completion:completionBlock];
 
     return YES;
+}
+
+- (void)removeAllAnimationsInLayer:(CALayer *)layer
+{
+    [layer removeAllAnimations];
+
+    for (CALayer *sublayer in layer.sublayers) {
+        [self removeAllAnimationsInLayer:sublayer];
+    }
+}
+
+- (void)layoutAllSubViewsInView:(UIView *)view
+{
+    [view setNeedsLayout];
+    [view layoutIfNeeded];
+
+    for (UIView *subview in view.subviews) {
+        [self layoutAllSubViewsInView:subview];
+    }
 }
 
 #pragma mark - Column Setup & Management -
