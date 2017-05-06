@@ -417,15 +417,18 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 
         [self removeAllAnimationsInLayer:newPrimary.view.layer];
         [self removeAllAnimationsInLayer:newSecondary.view.layer];
-        [self removeAllAnimationsInLayer:newDetail.view.layer];
 
         newPrimary.view.frame = primaryOffFrame;
         newSecondary.view.frame = primaryFrame;
-        newDetail.view.frame = expandingPrimary ? primaryFrame : detailFrame;
+
+        if (expandingPrimary) {
+            [self removeAllAnimationsInLayer:newDetail.view.layer];
+            [self layoutAllSubViewsInView:newDetail.view];
+            newDetail.view.frame = primaryFrame;
+        }
 
         [self layoutAllSubViewsInView:newPrimary.view];
         [self layoutAllSubViewsInView:newSecondary.view];
-        [self layoutAllSubViewsInView:newDetail.view];
 
         [UIView animateWithDuration:context.transitionDuration
                               delay:0.0f
@@ -433,17 +436,25 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
                          animations:^{
                              newPrimary.view.frame = newPrimaryFrame;
                              newSecondary.view.frame = newSecondaryFrame;
-                             newDetail.view.frame = newDetailFrame;
 
                              [self layoutAllSubViewsInView:newPrimary.view];
                              [self layoutAllSubViewsInView:newSecondary.view];
-                             [self layoutAllSubViewsInView:newDetail.view];
+
+                             if (expandingPrimary) {
+                                 newDetail.view.frame = newDetailFrame;
+                                 [self layoutAllSubViewsInView:newDetail.view];
+                             }
 
                              [self layoutSeparatorViewsForViews:viewsForSeparators height:size.height];
                          }
                          completion:^(BOOL completion) {
                              [self.view sendSubviewToBack:newPrimary.view];
                          }];
+
+        // When expanding from 2-3, the detail controller doesn't need to do any special animations
+        if (!expandingPrimary) {
+            newDetail.view.frame = newDetailFrame;
+        }
     };
 
     id completionBlock = ^(id<UIViewControllerTransitionCoordinatorContext> context) {
