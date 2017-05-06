@@ -400,7 +400,6 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     }
     else if (expandingPrimary) {
         newPrimary.view.frame = primaryOffFrame;
-        newDetail.view.frame = primaryFrame;
         detailSnapshot.frame = primaryFrame;
         [self.view insertSubview:detailSnapshot aboveSubview:newDetail.view];
         viewsForSeparators = @[newPrimary.view, newDetail.view];
@@ -425,7 +424,7 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
         newSecondary.view.frame = primaryFrame;
         [self layoutAllSubViewsInView:newSecondary.view];
 
-        newDetail.view.frame = primaryFrame;
+        newDetail.view.frame = expandingPrimary ? primaryFrame : detailFrame;
         [self layoutAllSubViewsInView:newDetail.view];
 
         [UIView animateWithDuration:context.transitionDuration
