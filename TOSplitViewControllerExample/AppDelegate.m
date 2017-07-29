@@ -49,7 +49,8 @@
   ontoPrimaryViewController:(UIViewController *)primaryViewController
               shouldAnimate:(BOOL)animate
 {
-    return YES;
+    // Return YES when you've manually handled the collapse logic
+    return NO;
 }
 
 - (nullable UIViewController *)splitViewController:(TOSplitViewController *)splitViewController
