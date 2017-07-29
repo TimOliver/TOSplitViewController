@@ -77,7 +77,6 @@
 			children = (
 				223D6A101E791D68000BE0D7 /* TOSplitViewController.h */,
 				223D6A111E791D68000BE0D7 /* TOSplitViewController.m */,
-				22F724651E94B07C00CE38A8 /* Models */,
 				22F724641E94B07600CE38A8 /* Categories */,
 			);
 			path = TOSplitViewController;
@@ -136,13 +135,6 @@
 				22F724671E94B17D00CE38A8 /* UINavigationController+TOSplitViewController.m */,
 			);
 			path = Categories;
-			sourceTree = "<group>";
-		};
-		22F724651E94B07C00CE38A8 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Models;
 			sourceTree = "<group>";
 		};
 		22F7246E1E94C22200CE38A8 /* TOSplitViewControllerExampleTests */ = {
