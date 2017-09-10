@@ -85,7 +85,7 @@ typedef NS_ENUM(NSInteger, TOSplitViewControllerType) {
  has started focussing on it.
  */
 - (void)to_showSecondaryViewController:(nullable UIViewController *)secondaryViewController
-              withDetailViewController:(nullable UIViewController *)detailViewController
+       withPendingDetailViewController:(nullable UIViewController *)detailViewController
                                 sender:(nullable id)sender;
 
 /*
@@ -94,6 +94,13 @@ typedef NS_ENUM(NSInteger, TOSplitViewControllerType) {
  is currently collapsed into the primary controller, this will then collapse the secondary controller into the primary.
  */
 - (void)to_showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender;
+
+/*
+ Inserts `viewController` as the new detail view controller, but will not perform any explicit collapsing or presentation logic.
+ This is a convenience method for setting up 'impending' detail view controllers that may appear after a size change, but
+ haven't been explicitly requested by the user yet.
+ */
+- (void)to_setPendingDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender;
 
 @end
 

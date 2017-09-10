@@ -841,6 +841,11 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     [self showDetailViewController:viewController collapse:YES sender:sender];
 }
 
+- (void)to_setPendingDetailViewController:(UIViewController *)viewController sender:(id)sender
+{
+    [self showDetailViewController:viewController collapse:NO sender:sender];
+}
+
 - (void)showDetailViewController:(nullable UIViewController *)viewController collapse:(BOOL)collapse sender:(nullable id)sender
 {
     // Let the delegate completely override this
@@ -1026,12 +1031,12 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 
 
 - (void)to_showSecondaryViewController:(nullable UIViewController *)secondaryViewController
-              withDetailViewController:(nullable UIViewController *)detailViewController
+       withPendingDetailViewController:(nullable UIViewController *)detailViewController
                                 sender:(nullable id)sender
 {
-    UIViewController *targetViewController = [self targetViewControllerForAction:@selector(to_showSecondaryViewController:withDetailViewController:sender:) sender:sender];
+    UIViewController *targetViewController = [self targetViewControllerForAction:@selector(to_showSecondaryViewController:withPendingDetailViewController:sender:) sender:sender];
     if (targetViewController) {
-        [targetViewController to_showSecondaryViewController:secondaryViewController withDetailViewController:detailViewController sender:sender];
+        [targetViewController to_showSecondaryViewController:secondaryViewController withPendingDetailViewController:detailViewController sender:sender];
     }
 }
 
@@ -1040,6 +1045,14 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     UIViewController *targetViewController = [self targetViewControllerForAction:@selector(to_showDetailViewController:sender:) sender:sender];
     if (targetViewController) {
         [targetViewController to_showDetailViewController:viewController sender:sender];
+    }
+}
+
+- (void)to_setPendingDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+{
+    UIViewController *targetViewController = [self targetViewControllerForAction:@selector(to_setPendingDetailViewController:sender:) sender:sender];
+    if (targetViewController) {
+        [targetViewController to_setPendingDetailViewController:viewController sender:sender];
     }
 }
 
