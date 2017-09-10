@@ -788,6 +788,7 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     // Let the delegate completely override this
     if (_delegateFlags.showSecondaryViewController) {
         if ([self.delegate splitViewController:self showSecondaryViewController:viewController sender:sender]) {
+            [_viewControllers insertObject:viewController atIndex:1];
             [self postShowNewViewControllerNotification];
             return;
         }
@@ -797,6 +798,12 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     // Check if we already have a secondary controller that needs to be extracted
     if (self.viewControllers.count == 3) {
         UIViewController *secondaryController = self.viewControllers[1];
+
+        // Cancel out if we're already showing this controller
+        if ([secondaryController isEqual:viewController]) {
+            return;
+        }
+
         [self extractFromPrimaryAuxiliaryViewController:secondaryController ofType:TOSplitViewControllerTypeSecondary];
     }
 
@@ -839,6 +846,7 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     // Let the delegate completely override this
     if (_delegateFlags.showDetailViewController) {
         if ([self.delegate splitViewController:self showDetailViewController:viewController sender:sender]) {
+            [_viewControllers addObject:viewController];
             [self postShowNewViewControllerNotification];
             return;
         }

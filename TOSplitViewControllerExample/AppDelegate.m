@@ -49,7 +49,7 @@
   ontoPrimaryViewController:(UIViewController *)primaryViewController
               shouldAnimate:(BOOL)animate
 {
-    // Return YES when you've manually handled the collapse logic
+    // Return YES when you've manually handled the collapse logic   
     return NO;
 }
 

@@ -89,7 +89,7 @@ typedef NS_ENUM(NSInteger, TOSplitViewControllerType) {
                                 sender:(nullable id)sender;
 
 /*
- Presents `viewController` as the new detail view controller. If another secondary view controller was
+ Presents `viewController` as the new detail view controller. If another detail view controller was
  already set, this will completely remove that view controller from the stack. If the secondary controller
  is currently collapsed into the primary controller, this will then collapse the secondary controller into the primary.
  */
