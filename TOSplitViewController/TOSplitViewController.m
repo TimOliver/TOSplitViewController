@@ -841,7 +841,7 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     [self showDetailViewController:viewController collapse:YES sender:sender];
 }
 
-- (void)to_setPendingDetailViewController:(UIViewController *)viewController sender:(id)sender
+- (void)to_setDetailViewController:(UIViewController *)viewController sender:(id)sender
 {
     [self showDetailViewController:viewController collapse:NO sender:sender];
 }
@@ -897,7 +897,7 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 }
 
 - (void)to_showSecondaryViewController:(nullable UIViewController *)secondaryViewController
-              withDetailViewController:(nullable UIViewController *)detailViewController
+               setDetailViewController:(nullable UIViewController *)detailViewController
                                 sender:(nullable id)sender
 {
     [self to_showSecondaryViewController:secondaryViewController sender:sender];
@@ -1031,12 +1031,12 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 
 
 - (void)to_showSecondaryViewController:(nullable UIViewController *)secondaryViewController
-       withPendingDetailViewController:(nullable UIViewController *)detailViewController
+       setDetailViewController:(nullable UIViewController *)detailViewController
                                 sender:(nullable id)sender
 {
-    UIViewController *targetViewController = [self targetViewControllerForAction:@selector(to_showSecondaryViewController:withPendingDetailViewController:sender:) sender:sender];
+    UIViewController *targetViewController = [self targetViewControllerForAction:@selector(to_showSecondaryViewController:setDetailViewController:sender:) sender:sender];
     if (targetViewController) {
-        [targetViewController to_showSecondaryViewController:secondaryViewController withPendingDetailViewController:detailViewController sender:sender];
+        [targetViewController to_showSecondaryViewController:secondaryViewController setDetailViewController:detailViewController sender:sender];
     }
 }
 
@@ -1048,11 +1048,11 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     }
 }
 
-- (void)to_setPendingDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
+- (void)to_setDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
 {
-    UIViewController *targetViewController = [self targetViewControllerForAction:@selector(to_setPendingDetailViewController:sender:) sender:sender];
+    UIViewController *targetViewController = [self targetViewControllerForAction:@selector(to_setDetailViewController:sender:) sender:sender];
     if (targetViewController) {
-        [targetViewController to_setPendingDetailViewController:viewController sender:sender];
+        [targetViewController to_setDetailViewController:viewController sender:sender];
     }
 }
 

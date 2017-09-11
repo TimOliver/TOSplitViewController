@@ -85,22 +85,24 @@ typedef NS_ENUM(NSInteger, TOSplitViewControllerType) {
  has started focussing on it.
  */
 - (void)to_showSecondaryViewController:(nullable UIViewController *)secondaryViewController
-       withPendingDetailViewController:(nullable UIViewController *)detailViewController
+               setDetailViewController:(nullable UIViewController *)detailViewController
                                 sender:(nullable id)sender;
 
 /*
- Presents `viewController` as the new detail view controller. If another detail view controller was
- already set, this will completely remove that view controller from the stack. If the secondary controller
- is currently collapsed into the primary controller, this will then collapse the secondary controller into the primary.
+ Presents `viewController` as the new detail view controller, and if necessary will push it to the current visible stack.
+ If another detail view controller was already set, this will completely remove that view controller from the stack.
  */
 - (void)to_showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender;
 
 /*
  Inserts `viewController` as the new detail view controller, but will not perform any explicit collapsing or presentation logic.
- This is a convenience method for setting up 'impending' detail view controllers that may appear after a size change, but
- haven't been explicitly requested by the user yet.
+ This is a convenience method for setting up 'impending' detail view controllers that may need to appear on screen at a later time,
+ but were not explicitly requested by the user.
+
+ This method is most useful when the secondary view controller needs the detail view controller to show some 'default' content before
+ the user has started interacting with it.
  */
-- (void)to_setPendingDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender;
+- (void)to_setDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender;
 
 @end
 
