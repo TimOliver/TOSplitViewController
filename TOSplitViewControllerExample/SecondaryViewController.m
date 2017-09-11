@@ -15,6 +15,25 @@
 
 @implementation SecondaryViewController
 
+- (instancetype)initWithStyle:(UITableViewStyle)style
+{
+    if (self = [super initWithStyle:style]) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(splitControllerShowTargetChangedNotification:) name:TOSplitViewControllerShowTargetDidChangeNotification object:nil];
+    }
+
+    return self;
+}
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:TOSplitViewControllerShowTargetDidChangeNotification object:nil];
+}
+
+- (void)splitControllerShowTargetChangedNotification:(NSNotification *)notification
+{
+    [self.tableView reloadRowsAtIndexPaths:self.tableView.indexPathsForVisibleRows withRowAnimation:UITableViewRowAnimationNone];
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"Secondary";
@@ -24,6 +43,18 @@
 {
     [super viewWillAppear:animated];
     NSLog(@"Secondary will appear");
+}
+
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    // Show the disclosure chevrons if we're completely collapsed
+    if (self.to_splitViewController.visibleViewControllers.count < 2)
+    {
+        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+    }
+    else {
+        cell.accessoryType = UITableViewCellAccessoryNone;
+    }
 }
 
 #pragma mark - Table view data source

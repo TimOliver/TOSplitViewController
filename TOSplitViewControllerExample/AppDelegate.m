@@ -38,7 +38,14 @@
     self.window.rootViewController = splitViewController;
     [self.window makeKeyAndVisible];
 
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(splitControllerShowTargetDidChange:) name:TOSplitViewControllerShowTargetDidChangeNotification object:nil];
+
     return YES;
+}
+
+- (void)splitControllerShowTargetDidChange:(NSNotification *)notification
+{
+    NSLog(@"Show Target Changed!");
 }
 
 #pragma mark - Delegate -

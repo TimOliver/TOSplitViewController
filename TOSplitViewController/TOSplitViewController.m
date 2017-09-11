@@ -633,6 +633,7 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 
 - (void)updateViewControllersForBoundsSize:(CGSize)size compactSizeClass:(BOOL)compact
 {
+    BOOL columnCountChanged = NO;
     NSInteger numberOfColumns    = self.visibleViewControllers.count;
     NSInteger newNumberOfColumns = [self possibleNumberOfColumnsForWidth:size.width];
     newNumberOfColumns = MIN(newNumberOfColumns, self.viewControllers.count);
@@ -674,6 +675,9 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
         [_visibleViewControllers removeObjectAtIndex:1];
 
         numberOfColumns--;
+
+        // Take note that a column count change occurred
+        columnCountChanged = YES;
     }
 
     // Expand columns to the necessary number
@@ -719,6 +723,14 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
         }
 
         numberOfColumns++;
+
+        // Take note that a column count change happened
+        columnCountChanged = YES;
+    }
+
+    // If a merge/collapse occurred, trigger a notification for any interested objects watching
+    if (columnCountChanged) {
+        [self postShowNewViewControllerNotification];
     }
 }
 
@@ -780,7 +792,6 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 - (void)to_showViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
 {
     [self showViewController:viewController sender:sender];
-    [self postShowNewViewControllerNotification];
 }
 
 - (void)to_showSecondaryViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
@@ -789,7 +800,6 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     if (_delegateFlags.showSecondaryViewController) {
         if ([self.delegate splitViewController:self showSecondaryViewController:viewController sender:sender]) {
             [_viewControllers insertObject:viewController atIndex:1];
-            [self postShowNewViewControllerNotification];
             return;
         }
     }
@@ -812,9 +822,6 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
         if (_visibleViewControllers.count != numberOfVisibleColumns) {
             [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
         }
-
-        [self postShowNewViewControllerNotification];
-
         return;
     }
 
@@ -822,18 +829,16 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     [_viewControllers insertObject:viewController atIndex:1];
 
     // Check if we have enough space to display it
-    NSInteger possibleColumsnCount = [self possibleNumberOfColumnsForWidth:self.view.bounds.size.width];
-    if (possibleColumsnCount > self.visibleViewControllers.count) {
+    NSInteger possibleColumnsCount = [self possibleNumberOfColumnsForWidth:self.view.bounds.size.width];
+    if (possibleColumnsCount > self.visibleViewControllers.count) {
         [_visibleViewControllers insertObject:viewController atIndex:1];
         [self addSplitViewControllerChildViewController:viewController];
         [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
-        [self postShowNewViewControllerNotification];
         return;
     }
 
     // Otherwise perform the logic to collapse these controllers into the primary
     [self mergeWithPrimaryAuxiliaryViewController:viewController ofType:TOSplitViewControllerTypeSecondary];
-    [self postShowNewViewControllerNotification];
 }
 
 - (void)to_showDetailViewController:(nullable UIViewController *)viewController sender:(nullable id)sender
@@ -852,7 +857,6 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     if (_delegateFlags.showDetailViewController) {
         if ([self.delegate splitViewController:self showDetailViewController:viewController sender:sender]) {
             [_viewControllers addObject:viewController];
-            [self postShowNewViewControllerNotification];
             return;
         }
     }
@@ -870,9 +874,6 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
         if (_visibleViewControllers.count != numberOfVisibleColumns) {
             [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
         }
-
-        [self postShowNewViewControllerNotification];
-
         return;
     }
 
@@ -880,19 +881,17 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     [_viewControllers addObject:viewController];
 
     // Check if we have enough space to display it
-    NSInteger possibleColumsnCount = [self possibleNumberOfColumnsForWidth:self.view.bounds.size.width];
-    if (possibleColumsnCount > self.visibleViewControllers.count) {
+    NSInteger possibleColumnsCount = [self possibleNumberOfColumnsForWidth:self.view.bounds.size.width];
+    if (possibleColumnsCount > self.visibleViewControllers.count) {
         [_visibleViewControllers addObject:viewController];
         [self addSplitViewControllerChildViewController:viewController];
         [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
-        [self postShowNewViewControllerNotification];
         return;
     }
 
     // Otherwise perform the logic to collapse these controllers into the primary
     if (collapse) {
         [self mergeWithPrimaryAuxiliaryViewController:viewController ofType:TOSplitViewControllerTypeDetail];
-        [self postShowNewViewControllerNotification];
     }
 }
 

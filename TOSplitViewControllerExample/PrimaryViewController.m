@@ -17,6 +17,20 @@
 
 @implementation PrimaryViewController
 
+- (instancetype)initWithStyle:(UITableViewStyle)style
+{
+    if (self = [super initWithStyle:style]) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(splitControllerShowTargetChangedNotification:) name:TOSplitViewControllerShowTargetDidChangeNotification object:nil];
+    }
+
+    return self;
+}
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:TOSplitViewControllerShowTargetDidChangeNotification object:nil];
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"Primary";
@@ -26,6 +40,11 @@
 {
     [super viewWillAppear:animated];
     NSLog(@"Primary will appear");
+}
+
+- (void)splitControllerShowTargetChangedNotification:(NSNotification *)notification
+{
+    [self.tableView reloadRowsAtIndexPaths:self.tableView.indexPathsForVisibleRows withRowAnimation:UITableViewRowAnimationNone];
 }
 
 #pragma mark - Table view data source
@@ -43,6 +62,19 @@
     return 5;
 }
 
+- (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    // Unless we're completely expanded, this controller will have some UINavigationController push logic.
+    // As such, show the disclosure chevrons
+    if ((indexPath.section == 0 && self.to_splitViewController.visibleViewControllers.count < 3) ||
+        (indexPath.section == 1 && self.to_splitViewController.visibleViewControllers.count < 2))
+    {
+        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+    }
+    else {
+        cell.accessoryType = UITableViewCellAccessoryNone;
+    }
+}
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     static NSString *identifier = @"Cell";
@@ -70,6 +102,8 @@
         SecondaryViewController *secondary = [[SecondaryViewController alloc] init];
         [self to_showSecondaryViewController:[[UINavigationController alloc] initWithRootViewController:secondary] sender:self];
     }
+
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
 @end
