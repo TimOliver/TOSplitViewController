@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.0.4 - 2017-09-24
+### Added
+- Added status bar color and visibility handling.
+
 ## 0.0.3 - 2017-09-11
 ### Added
 - Added a CHANGELOG.

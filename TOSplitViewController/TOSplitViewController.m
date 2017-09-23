@@ -487,6 +487,14 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     }
 }
 
+- (UIViewController *)childViewControllerForStatusBarStyle {
+    return self.visibleViewControllers.lastObject;
+}
+
+- (UIViewController *)childViewControllerForStatusBarHidden {
+    return self.visibleViewControllers.lastObject;
+}
+
 #pragma mark - Column Setup & Management -
 
 - (void)addSplitViewControllerChildViewController:(UIViewController *)controller
