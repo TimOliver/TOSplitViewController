@@ -157,8 +157,6 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
 {
-    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-
     // When the view isn't animated (eg, split screen resizes), just force a complete manual layout
     if (coordinator.isAnimated == NO) {
         [self layoutSplitViewControllerContentForSize:size];
@@ -188,6 +186,11 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     // If it's not possible to do an expand/collapse animation, just animate the current controllers resizing
     [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext>  _Nonnull context) {
         [self layoutViewControllersForBoundsSize:size];
+        
+        [self.primaryViewController viewWillTransitionToSize:self.primaryViewController.view.frame.size withTransitionCoordinator:coordinator];
+        [self.secondaryViewController viewWillTransitionToSize:self.secondaryViewController.view.frame.size withTransitionCoordinator:coordinator];
+        [self.detailViewController viewWillTransitionToSize:self.detailViewController.view.frame.size withTransitionCoordinator:coordinator];
+
         [self layoutSeparatorViewsForViewControllersWithHeight:size.height];
     } completion:nil];
 }
@@ -263,6 +266,10 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
         viewsForSeparators = @[primarySnapshot, self.primaryViewController.view];
     }
     [self layoutSeparatorViewsForViews:viewsForSeparators height:self.view.bounds.size.height];
+
+    //Message each child to let it know about its change
+    [self.primaryViewController viewWillTransitionToSize:newPrimaryFrame.size withTransitionCoordinator:coordinator];
+    [self.detailViewController viewWillTransitionToSize:newDetailFrame.size withTransitionCoordinator:coordinator];
 
     // Capture the current screen orientation
     UIInterfaceOrientation beforeOrientation = [[UIApplication sharedApplication] statusBarOrientation];
