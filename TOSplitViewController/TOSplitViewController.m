@@ -704,7 +704,6 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 
         // Restore the original controller for now
         [_visibleViewControllers insertObject:originalController atIndex:1];
-        [self addSplitViewControllerChildViewController:originalController];
 
         // Check if the user has provided custom expansion callbacks
         __block UIViewController *expandedViewController = nil;
@@ -718,6 +717,9 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
         if (expandedViewController == nil && [primaryViewController respondsToSelector:@selector(separateAuxiliaryViewController:ofType:forSplitViewController:shouldAnimate:)]) {
             expandedViewController = [primaryViewController separateAuxiliaryViewController:originalController ofType:type forSplitViewController:self shouldAnimate:NO];
         }
+
+        // Add the original controller in
+        [self addSplitViewControllerChildViewController:originalController];
 
         // If we did get a new controller, replace/merge the original controller with it
         if (expandedViewController) {
@@ -933,6 +935,8 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
                 controller = [self.primaryViewController separateAuxiliaryViewController:viewController ofType:type forSplitViewController:self shouldAnimate:YES];
             }
         }
+
+        viewController = controller;
     }
 
     // Strip it out of the split view controller

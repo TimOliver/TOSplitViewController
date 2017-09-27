@@ -138,12 +138,14 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
                  forSplitViewController:(TOSplitViewController *)splitViewController
                           shouldAnimate:(BOOL)animate
 {
-    // We can only work with 2 navigation view controllers
-    if (![auxiliaryViewController isKindOfClass:[UINavigationController class]]) {
+    // Hang onto the second navigation controller, but move all the child controllers to uss
+    if ([auxiliaryViewController isKindOfClass:[UINavigationController class]]) {
+        [(UINavigationController *)auxiliaryViewController toSplitViewController_moveViewControllersToNavigationController:self animated:animate];
         return;
     }
 
-    [(UINavigationController *)auxiliaryViewController toSplitViewController_moveViewControllersToNavigationController:self animated:animate];
+    // For any other controllers, just push them to our stack
+    [self pushViewController:auxiliaryViewController animated:animate];
 }
 
 - (nullable UIViewController *)separateAuxiliaryViewController:(UIViewController *)auxiliaryViewController
@@ -151,11 +153,19 @@ const NSString *TOSplitViewControllerMapTableKey = @"viewControllers";
                                         forSplitViewController:(TOSplitViewController *)splitViewController
                                                  shouldAnimate:(BOOL)animate
 {
-    if (![auxiliaryViewController isKindOfClass:[UINavigationController class]]) {
-        return nil;
+    if ([auxiliaryViewController isKindOfClass:[UINavigationController class]]) {
+        [(UINavigationController *)auxiliaryViewController toSplitViewController_restoreViewControllersAnimated:animate];
+        return auxiliaryViewController;
     }
 
-    [(UINavigationController *)auxiliaryViewController toSplitViewController_restoreViewControllersAnimated:animate];
+    // Strip back the controllers until we've isolated the auxiliary
+    if ([self.viewControllers indexOfObject:auxiliaryViewController] != NSNotFound) {
+        UIViewController *poppedViewController = nil;
+        do {
+            poppedViewController = [self popViewControllerAnimated:NO];
+        } while (poppedViewController != nil && poppedViewController != auxiliaryViewController);
+    }
+
     return auxiliaryViewController;
 }
 
