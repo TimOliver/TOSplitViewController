@@ -901,8 +901,8 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
     NSInteger possibleColumnsCount = [self possibleNumberOfColumnsForWidth:self.view.bounds.size.width];
     if (possibleColumnsCount > self.visibleViewControllers.count) {
         [_visibleViewControllers addObject:viewController];
-        [self addSplitViewControllerChildViewController:viewController];
         [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
+        [self addSplitViewControllerChildViewController:viewController];
         return;
     }
 
