@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## Unreleased
 
+## 0.0.5 - 2017-11-20
+### Fixed
+An issue where the size class wasn't getting checked properly, resulting in bad behaviour on iPhone X.
+
 ## 0.0.4 - 2017-09-24
 ### Added
 - Added status bar color and visibility handling.
