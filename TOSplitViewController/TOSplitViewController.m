@@ -153,6 +153,7 @@ NSString * const TOSplitViewControllerNotificationSplitViewControllerKey =
 {
     [super traitCollectionDidChange:previousTraitCollection];
     self.horizontalSizeClass = self.view.traitCollection.horizontalSizeClass;
+    [self layoutSplitViewControllerContentForSize:self.view.bounds.size];
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator
