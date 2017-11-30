@@ -5,6 +5,9 @@
 <img src="https://raw.githubusercontent.com/timoliver/tosplitviewcontroller/master/screenshot.jpg" style="margin:0 auto" />
 </p>
 
+[![Beerpay](https://beerpay.io/TimOliver/TOSplitViewController/badge.svg?style=flat)](https://beerpay.io/TimOliver/TOSplitViewController)
+[![PayPal](https://img.shields.io/badge/paypal-donate-blue.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=M4RKULAVKV7K8)
+
 `TOSplitViewController` is a very 'light' re-implementation of `UISplitViewController`. It behaves like `UISplitViewController` for the most part, but is capable of showing up to 3 columns on some of the larger screens such as the 12.9" iPad Pro, or a regular iPad in landscape orientation.
 
 # Features
@@ -70,8 +73,3 @@ iPad Air 2 perspective mockup by [Pixeden](http://pixeden.com).
 # License
 
 `TOSplitViewController` is available under the MIT license. Please see the [LICENSE](LICENSE) file for more information. ![analytics](https://ga-beacon.appspot.com/UA-5643664-16/TOSplitViewController/README.md?pixel)
-
-## Support on Beerpay
-Hey dude! Help me out for a couple of :beers:!
-
-[![Beerpay](https://beerpay.io/TimOliver/TOSplitViewController/badge.svg?style=beer-square)](https://beerpay.io/TimOliver/TOSplitViewController)  [![Beerpay](https://beerpay.io/TimOliver/TOSplitViewController/make-wish.svg?style=flat-square)](https://beerpay.io/TimOliver/TOSplitViewController?focus=wish)
