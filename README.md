@@ -70,3 +70,8 @@ iPad Air 2 perspective mockup by [Pixeden](http://pixeden.com).
 # License
 
 `TOSplitViewController` is available under the MIT license. Please see the [LICENSE](LICENSE) file for more information. ![analytics](https://ga-beacon.appspot.com/UA-5643664-16/TOSplitViewController/README.md?pixel)
+
+## Support on Beerpay
+Hey dude! Help me out for a couple of :beers:!
+
+[![Beerpay](https://beerpay.io/TimOliver/TOSplitViewController/badge.svg?style=beer-square)](https://beerpay.io/TimOliver/TOSplitViewController)  [![Beerpay](https://beerpay.io/TimOliver/TOSplitViewController/make-wish.svg?style=flat-square)](https://beerpay.io/TimOliver/TOSplitViewController?focus=wish)
